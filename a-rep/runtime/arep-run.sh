@@ -20,14 +20,13 @@ CONF="${2:-./config/arep.env}"
 : "${HEARTBEAT_NORMAL_MINUTES:=15}"
 : "${HEARTBEAT_SLOW_MINUTES:=60}"
 : "${RUNTIME_DIR:=.arep}"
-: "${LOG_DIR:=$RUNTIME_DIR/logs}"
+: "${LOG_DIR:=$RUNTIME_DIR/raw-logs}"
+: "${LOCK_FILE:=$RUNTIME_DIR/primary.lock}"
+: "${HEARTBEAT_LAST_FILE:=$RUNTIME_DIR/heartbeat.last}"
 
 cd "$AGENT_REPO_DIR"
 umask 077
 mkdir -p "$RUNTIME_DIR" "$LOG_DIR"
-LOCK_KEY="$(printf '%s' "$AGENT_REPO" | tr '/:' '__')"
-LOCK_FILE="${LOCK_FILE:-/tmp/a-rep-${LOCK_KEY}.lock}"
-HEARTBEAT_LAST_FILE="${HEARTBEAT_LAST_FILE:-/tmp/a-rep-${LOCK_KEY}.heartbeat.last}"
 mkdir -p "$(dirname "$LOCK_FILE")" "$(dirname "$HEARTBEAT_LAST_FILE")"
 
 exec 9>"$LOCK_FILE"
