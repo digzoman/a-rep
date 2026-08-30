@@ -72,6 +72,8 @@ cat > README.md <<EOFREADME
 A private A Rep agent repository.
 
 Role, $AGENT_ROLE.
+EOFREADME
+cat >> README.md <<'EOFREADME'
 
 Canonical top-level zones are `admin/`, `config/`, `scratch/`, `procedures/`, and `work/`. Prefer organizing new material inside those zones rather than inventing new top-level directories.
 
