@@ -28,6 +28,13 @@ fi
 gh repo clone "$REPO" "$TARGET_DIR"
 cd "$TARGET_DIR"
 
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  echo "Agent repository must be empty before bootstrap. Existing commits were found." >&2
+  exit 2
+fi
+
+git branch -M main
+
 mkdir -p scratch/memory scratch/notes scratch/documents scratch/scripts scratch/experiments procedures work config .arep/logs
 cat > .gitignore <<'GITIGNORE'
 .arep/
@@ -70,7 +77,7 @@ done
 
 git add .
 git commit -m "Initialize A Rep agent repository"
-git push origin HEAD:main
+git push -u origin main
 
 create_issue() {
   title="$1"
