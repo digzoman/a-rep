@@ -2,11 +2,11 @@
 name: a-rep
 description: Lightweight repeating agent framework for persistent, nondeterministic, goal-seeking work across fresh coding-agent sessions. Use when an agent must recover durable state, prioritize real-world goals, act through available tools, verify results, record progress, and improve its own procedures over time.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   framework: "A Rep"
 ---
 
-# A Rep V1
+# A Rep V1.1
 
 ## Purpose
 
@@ -20,8 +20,8 @@ Read these only as needed.
 
 - `references/PROTOCOL.md` for the operating protocol.
 - `references/ISSUES.md` for reserved system and work Issues.
-- `references/AGENT_REPO.md` for the private agent repository convention.
-- `references/RUNTIME.md` for heartbeat, rejuvenation, configuration, locking, and bootstrap.
+- `references/AGENT_REPO.md` for the private agent repository convention and canonical scaffold.
+- `references/RUNTIME.md` for heartbeat, rejuvenation, configuration, locking, logging, tests, and bootstrap.
 - `references/INFLUENCES.md` when formalizing processes or extending the framework.
 
 ## Core loop
@@ -99,15 +99,23 @@ Interrupt for genuine authority or consequence decisions, including material new
 
 Continue independent eligible work when one item is waiting on the human.
 
-## Agent repository zones
+## Canonical agent repository zones
 
-Every persistent agent repository uses three top-level work zones.
+V1.1 defines a canonical private-agent scaffold under `scaffold/agent-repo/`. Prefer these top-level zones over inventing new ones without a real structural need.
+
+`admin/` is durable operational information about the agent. `admin/logs/` holds concise sanitized Git-visible operational logs. `admin/runtime/` holds machine/runtime installation and recovery documentation.
+
+`config/` is non-secret configuration.
 
 `scratch/` is exploratory how. PRIMARY may freely create working memory, notes, temporary documents, experiments, and scripts there. Scratch is not automatically authoritative.
 
-`procedures/` is trusted how. Formal SOPs, skills, documents, scripts, and graph descriptions belong there only after the V1 promotion rule has been satisfied.
+`procedures/` is trusted how. Formal SOPs, skills, tested scripts, and graph descriptions belong there only after the V1 promotion rule has been satisfied.
 
 `work/` is the what. Actual artifacts produced while pursuing goals belong there.
+
+`.arep/` is local machine runtime state and raw execution output. It is Git ignored.
+
+Project-specific structure should normally be created inside `work/` or `scratch/`, not as a new top-level taxonomy.
 
 ## Self-improvement
 
@@ -131,6 +139,8 @@ It must not silently promote unapproved material into trusted procedures.
 
 Heartbeat and rejuvenation use the same local PRIMARY lease. Deadline mode suppresses rejuvenation.
 
+Do not activate rejuvenation merely because time has passed. Activate it when enough real execution history exists to expose reusable patterns, recurring mistakes, research backlogs, or automation opportunities.
+
 ## Heartbeat and runtime
 
 The scheduler is intentionally simple. It wakes an execution surface. The coding agent provides the intelligence.
@@ -141,11 +151,17 @@ The V1 launcher supports `fast`, `normal`, `slow`, and `paused` heartbeat modes.
 
 Only PRIMARY owns runtime configuration. Temporary workers request changes through Issue 16.
 
-See `references/RUNTIME.md`.
+V1.1 recommends `.arep/primary.lock`, `.arep/heartbeat.last`, and `.arep/raw-logs/` for local runtime state. See `references/RUNTIME.md`.
 
 ## Logging
 
-Raw launcher output stays local under the Git-ignored `.arep/` runtime directory. Material actions and outcomes belong durably in their work Issues and, when cross-cutting and significant, Issue 3.
+Use two log tiers.
+
+Raw launcher stdout/stderr stays local under Git-ignored `.arep/raw-logs/`.
+
+Concise sanitized operational logs that are useful for humans or future cold starts may be tracked under `admin/logs/`, preferably as daily Markdown files. Log executed cycles, not scheduler polls that exit because the heartbeat is not due.
+
+Material cross-cutting actions, failures, recoveries, and configuration transitions belong in Issue 3. Keep Issue 1 concise and current.
 
 Do not intentionally expose secrets in logs, repository state, or Issues.
 
