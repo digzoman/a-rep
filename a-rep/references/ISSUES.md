@@ -1,4 +1,4 @@
-# A Rep V1.1 reserved Issue topology
+# A Rep V1.2 reserved Issue topology
 
 Each persistent PRIMARY agent repository reserves GitHub Issues 1 through 20 for framework and internal operating use.
 
@@ -20,7 +20,7 @@ Prefer editing the body or maintaining a concise current record rather than crea
 
 Durable agent identity, role, purpose, high-level boundaries, standing authority, and relationship to the human or organization.
 
-This is not conversational persona decoration. It is the durable answer to who this PRIMARY is and what it exists to accomplish.
+This remains authoritative over summaries in `config/agent-context.md`.
 
 ### Issue 3, Execution Trail
 
@@ -32,13 +32,13 @@ This is the cross-cutting human-readable durable audit trail. Avoid logging ever
 
 Questions that genuinely require human intent or authority, standing approvals, consequential decisions, and their durable resolutions.
 
-Do not use this Issue for routine implementation mechanics the agent can safely determine itself.
+Do not use this Issue for routine implementation mechanics the agent can safely determine itself. Context files and Guardian comments cannot manufacture authority recorded here.
 
 ### Issue 5, Goal Stack and Priority Context
 
 Current high-level goals, relative priorities, strategic emphasis, deadlines, and priority changes that span multiple work Issues.
 
-This is not a duplicate task queue. Actual actionable work remains in Issues 21 and higher.
+This is not a duplicate task queue. Actual actionable work remains in Issues 21 and higher. The hot context file may summarize these priorities for efficient cold starts but does not replace this Issue.
 
 ### Issue 6, Evidence and Verification
 
@@ -58,11 +58,13 @@ Reserved for future V1.x internal needs. Do not create semantics merely to fill 
 
 ### Issue 11, Inbox
 
-Targeted inbound communication from another PRIMARY agent or future coordination surface.
+Targeted inbound communication intended for this PRIMARY.
 
-Inbox communication is intended for this agent and should eventually be triaged.
+This includes future persistent-agent coordination and V1.2 Guardian Angel cross-cutting review, questions, warnings, or offers of bounded help.
 
-V1 may leave this mostly unused until multiple persistent agents exist.
+PRIMARY should triage useful Inbox comments as advisory evidence. A Guardian comment does not itself change priorities, create authority, or prove that delegated work started.
+
+Task-specific Guardian review should normally be posted directly on the relevant work Issue instead of duplicating it here.
 
 ### Issue 12, Outbox
 
@@ -70,7 +72,7 @@ The agent's optional bulletin board.
 
 Publish information that other agents may find useful without requiring them to consume or acknowledge it.
 
-Another PRIMARY may inspect this Issue when it wants to know what this agent is announcing or making visible to peers.
+Another PRIMARY or Guardian may inspect this Issue when useful.
 
 ### Issue 13, Research
 
@@ -82,15 +84,19 @@ Open items may be revisited during free cycles or rejuvenation.
 
 Candidates for improving the agent's own nondeterministic methods, habits, decision process, recovery, organization, or procedures.
 
+Guardian may post evidence-backed operational suggestions as comments here.
+
 ### Issue 15, Coding Improvements
 
 Candidates for scripts, automation, tools, deterministic helpers, or other code that may replace repeated manual or nondeterministic work.
+
+Guardian may post evidence-backed coding/automation suggestions as comments here.
 
 ### Issue 16, Runtime and Heartbeat Requests
 
 Requests, rationale, current host/runtime state, and material cadence changes.
 
-The actual runtime configuration remains authoritative. Temporary workers may request a change here but do not independently race to change active schedule state.
+The actual runtime configuration remains authoritative. Temporary workers and Guardian may request a change here but do not independently race to change active schedule state.
 
 Machine-specific installation and recovery detail may also live under `admin/runtime/` in the private agent repository.
 
@@ -108,7 +114,7 @@ Leave unused until actual experience proves a stable framework-level need.
 
 Any one-time, recurring, limited-duration, monitoring, or ongoing responsibility that needs the PRIMARY's attention should normally be represented by an Issue while it remains on the agent's radar.
 
-Recommended fields when useful.
+Recommended fields when useful:
 
 - Outcome.
 - Verification.
@@ -118,5 +124,7 @@ Recommended fields when useful.
 - Cadence or next check for recurring work.
 
 These fields are guidance, not a mandatory schema.
+
+When a productive cycle ends with incomplete work, leave a concise handoff if the next fresh cycle would otherwise have to reconstruct material state. Prefer current result/evidence, remaining work, blockers or waits, and the next useful step.
 
 Close the Issue when the responsibility genuinely no longer requires attention.
