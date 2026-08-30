@@ -1,4 +1,4 @@
-# A Rep V1 protocol
+# A Rep V1.1 protocol
 
 ## 1. Persistent identity
 
@@ -63,7 +63,20 @@ Ask whether the proposed action changes business intent, has an external effect,
 
 If not, and the action is a reversible mechanic inside already-authorized scope, PRIMARY should normally decide it.
 
-## 8. Self-improvement lifecycle
+## 8. Canonical repository structure
+
+Prefer the V1.1 top-level zones `admin/`, `config/`, `scratch/`, `procedures/`, and `work/` rather than inventing new top-level directories without a stable need.
+
+- `admin/` contains durable operational documentation and sanitized Git-visible logs.
+- `config/` contains non-secret configuration.
+- `scratch/` contains exploratory, untrusted working material.
+- `procedures/` contains reviewed trusted ways of working.
+- `work/` contains artifacts produced while pursuing real goals.
+- `.arep/` contains Git-ignored local runtime state and raw logs.
+
+Project-specific organization should normally happen inside `work/` or `scratch/`.
+
+## 9. Self-improvement lifecycle
 
 The V1 trust boundary is simple.
 
@@ -73,7 +86,7 @@ Not every repeated action deserves formalization.
 
 Formalize when doing so is likely to remove meaningful repeated reasoning or tool work, reduce recurring errors, improve recovery, or create a demonstrably better reusable method.
 
-## 9. Rejuvenation priority
+## 10. Rejuvenation priority
 
 Rejuvenation is useful idle-capacity work, not a competing manager.
 
@@ -83,7 +96,19 @@ Normal priority is.
 
 Deadline or focus mode may suppress rejuvenation.
 
-## 10. External world state
+Activate rejuvenation based on useful execution history, not elapsed time alone.
+
+## 11. Logging and observability
+
+Use two log tiers.
+
+Raw launcher output belongs under Git-ignored `.arep/raw-logs/` and is for local debugging.
+
+Concise sanitized executed-cycle records may be tracked under `admin/logs/` when remote observability or future recovery benefits from them. Do not create durable log entries for scheduler polls that skip because heartbeat is not due.
+
+Issue 3 is reserved for material cross-cutting transitions, failures, recoveries, and configuration changes rather than routine cycle detail.
+
+## 12. External world state
 
 GitHub is durable agent memory and audit state, but it is not necessarily the source of truth for the goal itself.
 
@@ -91,13 +116,13 @@ The authoritative environment depends on the work. Examples include CRM, email, 
 
 A Rep is therefore environment-first while using the repository as the persistent control and memory surface.
 
-## 11. Recovery over process continuity
+## 13. Recovery over process continuity
 
 Continuity of evidence matters more than continuity of a particular model session.
 
 A crashed or stale execution surface may be replaced by a fresh one if the task, authority, current evidence, and durable state can be reconstructed safely.
 
-## 12. Simplicity test
+## 14. Simplicity test
 
 Before adding framework machinery, ask whether a capable coding agent can already perform the function by reading the skill and ordinary repository state.
 
