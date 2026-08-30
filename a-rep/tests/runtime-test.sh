@@ -16,7 +16,7 @@ mkdir -p "$AGENT/config"
 
 cat > "$FAKE_BIN" <<'FAKE'
 #!/bin/sh
-printf '%s\n' "$*" >> "${FAKE_COUNT_FILE:?}"
+printf 'run\n' >> "${FAKE_COUNT_FILE:?}"
 exit "${FAKE_EXIT_CODE:-0}"
 FAKE
 chmod +x "$FAKE_BIN"
