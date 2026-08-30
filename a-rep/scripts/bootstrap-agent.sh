@@ -14,6 +14,11 @@ TARGET_DIR="${4:-}"
 command -v gh >/dev/null 2>&1 || { echo "gh is required" >&2; exit 2; }
 command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 2; }
 
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+A_REP_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+SCAFFOLD="$A_REP_DIR/scaffold/agent-repo"
+[ -d "$SCAFFOLD" ] || { echo "Missing canonical scaffold: $SCAFFOLD" >&2; exit 2; }
+
 visibility="$(gh repo view "$REPO" --json visibility --jq '.visibility')"
 [ "$visibility" = "PRIVATE" ] || { echo "Agent repository must be private, got: $visibility" >&2; exit 2; }
 
@@ -34,11 +39,9 @@ if git rev-parse --verify HEAD >/dev/null 2>&1; then
 fi
 
 git branch -M main
+cp -R "$SCAFFOLD"/. .
+mkdir -p .arep/raw-logs
 
-mkdir -p scratch/memory scratch/notes scratch/documents scratch/scripts scratch/experiments procedures work config .arep/logs
-cat > .gitignore <<'GITIGNORE'
-.arep/
-GITIGNORE
 cat > config/arep.env <<EOFCONF
 AGENT_ID="$AGENT_ID"
 AGENT_ROLE="$AGENT_ROLE"
@@ -58,7 +61,9 @@ HEARTBEAT_SLOW_MINUTES="60"
 DEADLINE_MODE="false"
 REJUVENATION_ENABLED="true"
 RUNTIME_DIR=".arep"
-LOG_DIR=".arep/logs"
+LOG_DIR=".arep/raw-logs"
+LOCK_FILE=".arep/primary.lock"
+HEARTBEAT_LAST_FILE=".arep/heartbeat.last"
 EOFCONF
 
 cat > README.md <<EOFREADME
@@ -68,12 +73,17 @@ A private A Rep agent repository.
 
 Role, $AGENT_ROLE.
 
-Trusted operating zones are scratch, procedures, and work. Durable operating state is also maintained through GitHub Issues.
-EOFREADME
+Canonical top-level zones are `admin/`, `config/`, `scratch/`, `procedures/`, and `work/`. Prefer organizing new material inside those zones rather than inventing new top-level directories.
 
-for d in scratch/memory scratch/notes scratch/documents scratch/scripts scratch/experiments procedures work; do
-  : > "$d/.gitkeep"
-done
+- `admin/` durable operational documentation and sanitized Git-visible logs.
+- `config/` non-secret configuration.
+- `scratch/` exploratory and untrusted working material.
+- `procedures/` reviewed and trusted ways of working.
+- `work/` actual artifacts produced while pursuing goals.
+- `.arep/` local machine runtime state and raw logs; Git ignored.
+
+Durable operating state is also maintained through GitHub Issues. Normal real work starts at Issue 21.
+EOFREADME
 
 git add .
 git commit -m "Initialize A Rep agent repository"
