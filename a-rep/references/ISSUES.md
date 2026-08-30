@@ -1,4 +1,4 @@
-# A Rep V1 reserved Issue topology
+# A Rep V1.1 reserved Issue topology
 
 Each persistent PRIMARY agent repository reserves GitHub Issues 1 through 20 for framework and internal operating use.
 
@@ -24,9 +24,9 @@ This is not conversational persona decoration. It is the durable answer to who t
 
 ### Issue 3, Execution Trail
 
-Append material actions, results, meaningful failures, recoveries, and major state transitions.
+Record material actions, results, meaningful failures, recoveries, and major state transitions.
 
-This is the human-readable durable audit trail. Avoid logging every trivial thought or tool call.
+This is the cross-cutting human-readable durable audit trail. Avoid logging every scheduler poll or routine heartbeat. More granular sanitized executed-cycle history may live under tracked `admin/logs/`.
 
 ### Issue 4, Human Decisions and Authority
 
@@ -88,13 +88,17 @@ Candidates for scripts, automation, tools, deterministic helpers, or other code 
 
 ### Issue 16, Runtime and Heartbeat Requests
 
-Requests and rationale for heartbeat or runtime changes.
+Requests, rationale, current host/runtime state, and material cadence changes.
 
-The actual runtime configuration remains authoritative. Temporary workers may request a change here but do not independently race to change the active schedule.
+The actual runtime configuration remains authoritative. Temporary workers may request a change here but do not independently race to change active schedule state.
+
+Machine-specific installation and recovery detail may also live under `admin/runtime/` in the private agent repository.
 
 ### Issue 17, Rejuvenation
 
 Rejuvenation findings, current self-improvement focus, proposals, and material outcomes.
+
+Do not activate rejuvenation merely because time has passed. Enable it when enough real execution history exists to expose recurring reasoning, recurring mistakes, reusable procedures, research backlogs, or automation opportunities.
 
 ### Issues 18 through 20, Reserved
 
