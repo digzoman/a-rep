@@ -1,0 +1,102 @@
+#!/bin/sh
+set -eu
+
+REPO="${1:-}"
+AGENT_ID="${2:-}"
+AGENT_ROLE="${3:-}"
+TARGET_DIR="${4:-}"
+
+[ -n "$REPO" ] && [ -n "$AGENT_ID" ] && [ -n "$AGENT_ROLE" ] || {
+  echo "Usage: $0 owner/private-repo agent-id agent-role [target-dir]" >&2
+  exit 2
+}
+
+command -v gh >/dev/null 2>&1 || { echo "gh is required" >&2; exit 2; }
+command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 2; }
+
+visibility="$(gh repo view "$REPO" --json visibility --jq '.visibility')"
+[ "$visibility" = "PRIVATE" ] || { echo "Agent repository must be private, got: $visibility" >&2; exit 2; }
+
+existing="$(gh api "repos/$REPO/issues?state=all&per_page=1" --jq 'length')"
+[ "$existing" = "0" ] || { echo "Repository already has Issue or PR numbers. Bootstrap requires an unused number space." >&2; exit 2; }
+
+if [ -z "$TARGET_DIR" ]; then
+  TARGET_DIR="$(printf '%s' "$REPO" | awk -F/ '{print $2}')"
+fi
+[ ! -e "$TARGET_DIR" ] || { echo "Target path exists: $TARGET_DIR" >&2; exit 2; }
+
+gh repo clone "$REPO" "$TARGET_DIR"
+cd "$TARGET_DIR"
+
+mkdir -p scratch/memory scratch/notes scratch/documents scratch/scripts scratch/experiments procedures work config .arep/logs
+cat > .gitignore <<'GITIGNORE'
+.arep/
+GITIGNORE
+cat > config/arep.env <<EOFCONF
+AGENT_ID="$AGENT_ID"
+AGENT_ROLE="$AGENT_ROLE"
+AGENT_REPO="$REPO"
+AGENT_REPO_DIR="$(pwd)"
+A_REP_REPO="digzoman/a-rep"
+A_REP_REF="main"
+A_REP_SKILL_PATH="/opt/a-rep/a-rep/SKILL.md"
+EXECUTION_DRIVER="codex"
+EXECUTION_BIN="codex"
+EXECUTION_MODEL=""
+HEARTBEAT_ENABLED="true"
+HEARTBEAT_MODE="normal"
+HEARTBEAT_FAST_MINUTES="5"
+HEARTBEAT_NORMAL_MINUTES="15"
+HEARTBEAT_SLOW_MINUTES="60"
+DEADLINE_MODE="false"
+REJUVENATION_ENABLED="true"
+RUNTIME_DIR=".arep"
+LOG_DIR=".arep/logs"
+EOFCONF
+
+cat > README.md <<EOFREADME
+# $AGENT_ID
+
+A private A Rep agent repository.
+
+Role, $AGENT_ROLE.
+
+Trusted operating zones are scratch, procedures, and work. Durable operating state is also maintained through GitHub Issues.
+EOFREADME
+
+for d in scratch/memory scratch/notes scratch/documents scratch/scripts scratch/experiments procedures work; do
+  : > "$d/.gitkeep"
+done
+
+git add .
+git commit -m "Initialize A Rep agent repository"
+git push origin HEAD:main
+
+create_issue() {
+  title="$1"
+  body="$2"
+  gh issue create --repo "$REPO" --title "$title" --body "$body" >/dev/null
+}
+
+create_issue "[A Rep] Pulse" "Current concise operational state. Maintain current focus, waits, heartbeat mode, and next likely action here."
+create_issue "[A Rep] Identity and Charter" "Agent ID, $AGENT_ID. Role, $AGENT_ROLE. Record durable purpose, boundaries, standing authority, and relationship to the human or organization here."
+create_issue "[A Rep] Execution Trail" "Append material actions, outcomes, meaningful failures, recoveries, and major state transitions. Avoid trivial tool-call logging."
+create_issue "[A Rep] Human Decisions and Authority" "Record genuine human authority questions, standing approvals, consequential decisions, and durable resolutions."
+create_issue "[A Rep] Goal Stack and Priority Context" "Record high-level goals, strategic emphasis, deadlines, and priority changes spanning multiple work Issues."
+create_issue "[A Rep] Evidence and Verification" "Record cross-cutting evidence standards or verification that does not naturally belong to a specific work Issue."
+create_issue "[A Rep] Recovery and Incidents" "Record material runtime incidents, conflicting durable state, and recovery information needed for safe cold-start continuation."
+create_issue "[A Rep] Reserved 8" "Reserved for a future stable framework-level need."
+create_issue "[A Rep] Reserved 9" "Reserved for a future stable framework-level need."
+create_issue "[A Rep] Reserved 10" "Reserved for a future stable framework-level need."
+create_issue "[A Rep] Inbox" "Targeted inbound communication intended for this PRIMARY. Triage when multiple persistent agents or coordination surfaces exist."
+create_issue "[A Rep] Outbox" "Optional bulletin board for information other agents may inspect without mandatory acknowledgement."
+create_issue "[A Rep] Research" "Backlog of worthwhile questions and investigations for free cycles or rejuvenation."
+create_issue "[A Rep] Operational Improvements" "Candidates for improving the agent's nondeterministic methods, organization, recovery, and procedures."
+create_issue "[A Rep] Coding Improvements" "Candidates for scripts, automation, tools, and deterministic helpers that may replace repeated work."
+create_issue "[A Rep] Runtime and Heartbeat Requests" "Requests and rationale for runtime or cadence changes. The configured runtime remains authoritative."
+create_issue "[A Rep] Rejuvenation" "Rejuvenation focus, findings, proposals, and material self-improvement outcomes."
+create_issue "[A Rep] Reserved 18" "Reserved for a future stable framework-level need."
+create_issue "[A Rep] Reserved 19" "Reserved for a future stable framework-level need."
+create_issue "[A Rep] Reserved 20" "Reserved for a future stable framework-level need."
+
+echo "Bootstrapped $REPO. Normal work starts at Issue 21."
