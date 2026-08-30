@@ -126,8 +126,8 @@ if run_agent >"$LOG" 2>&1; then
     date +%s >"$HEARTBEAT_LAST_FILE"
   fi
   exit 0
+else
+  rc=$?
+  cat "$LOG" >&2
+  exit "$rc"
 fi
-
-rc=$?
-cat "$LOG" >&2
-exit "$rc"
