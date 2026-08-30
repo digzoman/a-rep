@@ -42,7 +42,7 @@ See `ISSUES.md` for the complete topology.
 
 The public framework includes `scripts/bootstrap-agent.sh`.
 
-It expects a newly created private GitHub repository with no existing Issues or pull requests. It clones the repository, creates the standard zones and config, commits the initial skeleton, then creates Issues 1 through 20 in order.
+It expects a newly created empty private GitHub repository with no commits, Issues, or pull requests. It clones the repository, creates the standard zones and config, makes the initial commit on `main`, sets `origin/main` as upstream, then creates Issues 1 through 20 in order.
 
 The bootstrap does not create the GitHub repository itself and does not install or authenticate coding-agent CLIs.
 
