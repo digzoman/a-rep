@@ -1,37 +1,43 @@
 # A Rep
 
-A Rep is a lightweight, nondeterministic-first repeating agent framework.
+A Rep is a lightweight, nondeterministic-first Repeating Agent Framework.
 
-Its purpose is to let a capable coding agent operate as a persistent, goal-seeking, self-improving agent by following one portable skill and using a Git repository as durable operating memory.
+Its purpose is to let a capable coding agent operate as a persistent, goal-seeking, self-improving agent by following one portable skill and using a private Git repository as durable operating memory.
 
-A Rep does not require a dedicated orchestration platform. In V1, the coding agent is the execution engine, the skill is the operating protocol, the agent repository is durable state, and a simple scheduler can provide wakeups.
+A Rep does not require a dedicated orchestration platform. In V1, the coding agent is the execution engine, the skill is the operating protocol, the agent repository is durable control and memory state, and a tiny scheduler provides wakeups.
 
 ## V1 thesis
 
-A Rep begins with judgment rather than a predetermined workflow.
-
 A PRIMARY repeatedly reconstructs reality, selects the highest-value eligible action, acts, verifies the result, records durable state, learns, and repeats.
 
-Stable recurring behaviour may later be formalized into reviewed procedures, scripts, skills, or graph-based workflows.
+A Rep begins with judgment rather than a predetermined workflow. Stable recurring behaviour may later be formalized into reviewed procedures, scripts, skills, or graph-based workflows.
 
 ## Portability
 
-A Rep is designed to be execution-surface independent. Codex is the first intended execution surface, but the framework should also be usable by OpenCode, Claude Code, and other capable coding agents with suitable repository and tool access.
-
-The persistent agent is not the current model session. Its durable identity and continuity live in the A Rep skill plus its own agent repository.
+The persistent agent is not the current model session. Codex and OpenCode are directly supported by the minimal launcher, and other capable execution surfaces can be added without changing the agent's durable identity.
 
 ## Repository layout
 
 The portable skill is under `a-rep/`.
 
-- `a-rep/SKILL.md` contains the current operating rules.
-- `a-rep/references/PROTOCOL.md` contains the V1 protocol.
-- `a-rep/references/ISSUES.md` defines the reserved issue topology.
-- `a-rep/references/AGENT_REPO.md` defines the private agent repository convention.
-- `a-rep/references/INFLUENCES.md` records concepts intentionally borrowed from We Rep, LangGraph, OpenClaw, Hermes Agent, and Agent Skills.
+- `a-rep/SKILL.md`, current operating rules.
+- `a-rep/references/`, current protocol, Issue, repository, runtime, and influence references.
+- `a-rep/prompts/`, cold-start heartbeat and rejuvenation prompts.
+- `a-rep/runtime/`, the tiny launcher, config example, and cron example.
+- `a-rep/scripts/bootstrap-agent.sh`, bootstrap for a new private PRIMARY-agent repository.
 
-Runtime scripts and bootstrap automation are intentionally deferred to Run 2.
+A bootstrapped agent repository reserves Issues 1 through 20 for A Rep system use. Real work starts at Issue 21.
+
+## Runtime philosophy
+
+Cron wakes the launcher frequently. The launcher enforces one local PRIMARY lease and determines whether a heartbeat is due. The fresh coding-agent session reads the skill and private agent repository and decides what to do.
+
+Rejuvenation uses the same lease and is suppressed during deadline mode.
+
+No database, queue, custom orchestration server, workflow engine, or memory service is required.
 
 ## Current status
 
-A Rep V1 is a draft under active development. See `CURRENT.md`.
+A Rep V1 is still a draft. Run 2 provides the minimal implementation. Run 3 is the fresh-agent acceptance and simplification pass before V1 is treated as ready for the first live agent.
+
+See `CURRENT.md`.
