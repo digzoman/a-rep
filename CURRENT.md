@@ -19,6 +19,14 @@ V1.1 is a hardening and canonicalization release rather than a new architecture.
 
 The runtime remains one tiny launcher plus cron wakeups. The coding agent remains the intelligence.
 
+## Verification
+
+The V1.1 launcher and automated runtime test suite pass shell syntax and isolated regression execution using a fake execution binary. The suite covers normal, fast, slow, paused, deadline acceleration, failed execution, success timestamp handling, due-skip, PRIMARY lock contention, rejuvenation disabled state, and deadline suppression.
+
+Validation also caught and fixed two V1.1 implementation mistakes before handoff: test invocation counting across multiline prompts and unsafe unquoted Markdown backticks in the bootstrap-generated README.
+
+Host-specific live-agent verification remains a deployment concern after pulling V1.1 onto that host.
+
 ## Deliberate exclusions
 
 V1.1 still excludes persistent multi-PRIMARY coordination, a team repository, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, and other orchestration infrastructure.
@@ -27,4 +35,4 @@ Bounded execution timeout/stuck-cycle handling and versioned scaffold migrations
 
 ## First live agent
 
-Fred is the first live A Rep agent and should be patched to the V1.1 scaffold/runtime conventions before receiving Issue 21.
+Fred's GitHub repository has been patched to the V1.1 scaffold/runtime conventions. Fred's runtime-host checkouts must be synchronized to current `main` and re-verified before receiving Issue 21.
