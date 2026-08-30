@@ -38,6 +38,4 @@ No database, queue, custom orchestration server, workflow engine, or memory serv
 
 ## Current status
 
-A Rep V1 is still a draft. Run 2 provides the minimal implementation. Run 3 is the fresh-agent acceptance and simplification pass before V1 is treated as ready for the first live agent.
-
-See `CURRENT.md`.
+A Rep V1 has completed its initial protocol, implementation, and acceptance passes and is ready for its first live persistent agent. See `CURRENT.md` for the tested scope and remaining real-world validation boundary.
