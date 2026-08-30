@@ -66,6 +66,39 @@ LOCK_FILE=".arep/primary.lock"
 HEARTBEAT_LAST_FILE=".arep/heartbeat.last"
 EOFCONF
 
+cat > config/agent-context.md <<EOFCONTEXT
+# Agent context — hot
+
+This is the short strategic context PRIMARY and Guardian read on every cycle.
+
+Agent: $AGENT_ID
+Role: $AGENT_ROLE
+EOFCONTEXT
+cat >> config/agent-context.md <<'EOFCONTEXT'
+
+Issue 2 remains authoritative for durable identity, charter, and standing authority. This file is a concise working summary, not a way to manufacture or expand authority.
+
+## Mission
+
+Define the current high-level mission before assigning consequential real work.
+
+## Current priorities
+
+Summarize the few priorities that matter across multiple work Issues. Detailed actionable work remains in Issues 21 and higher.
+
+## Decision principles
+
+Record the small number of standing strategic or operating principles that materially improve decisions.
+
+## Current important context
+
+Capture only information worth loading every cycle.
+
+## When to load deep context
+
+Read `config/agent-context-deep.md` when active work needs richer organizational history, strategy, stakeholders, constraints, terminology, or background than this short file provides.
+EOFCONTEXT
+
 cat > README.md <<EOFREADME
 # $AGENT_ID
 
@@ -78,11 +111,13 @@ cat >> README.md <<'EOFREADME'
 Canonical top-level zones are `admin/`, `config/`, `scratch/`, `procedures/`, and `work/`. Prefer organizing new material inside those zones rather than inventing new top-level directories.
 
 - `admin/` durable operational documentation and sanitized Git-visible logs.
-- `config/` non-secret configuration.
+- `config/` non-secret runtime configuration plus hot/deep strategic context.
 - `scratch/` exploratory and untrusted working material.
 - `procedures/` reviewed and trusted ways of working.
 - `work/` actual artifacts produced while pursuing goals.
 - `.arep/` local machine runtime state and raw logs; Git ignored.
+
+PRIMARY always reads `config/agent-context.md`. It reads `config/agent-context-deep.md` when deeper background is materially useful.
 
 Durable operating state is also maintained through GitHub Issues. Normal real work starts at Issue 21.
 EOFREADME
@@ -107,7 +142,7 @@ create_issue "[A Rep] Recovery and Incidents" "Record material runtime incidents
 create_issue "[A Rep] Reserved 8" "Reserved for a future stable framework-level need."
 create_issue "[A Rep] Reserved 9" "Reserved for a future stable framework-level need."
 create_issue "[A Rep] Reserved 10" "Reserved for a future stable framework-level need."
-create_issue "[A Rep] Inbox" "Targeted inbound communication intended for this PRIMARY. Triage when multiple persistent agents or coordination surfaces exist."
+create_issue "[A Rep] Inbox" "Targeted inbound communication intended for this PRIMARY, including optional Guardian Angel review or offers of bounded help. Triage when useful."
 create_issue "[A Rep] Outbox" "Optional bulletin board for information other agents may inspect without mandatory acknowledgement."
 create_issue "[A Rep] Research" "Backlog of worthwhile questions and investigations for free cycles or rejuvenation."
 create_issue "[A Rep] Operational Improvements" "Candidates for improving the agent's nondeterministic methods, organization, recovery, and procedures."
