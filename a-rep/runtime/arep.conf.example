@@ -1,0 +1,25 @@
+# A Rep V1 agent runtime config. No secrets.
+AGENT_ID="fred"
+AGENT_ROLE="Founder"
+AGENT_REPO="digzoman/fred"
+AGENT_REPO_DIR="/srv/fred"
+
+A_REP_REPO="digzoman/a-rep"
+A_REP_REF="main"
+A_REP_SKILL_PATH="/opt/a-rep/a-rep/SKILL.md"
+
+EXECUTION_DRIVER="codex" # codex | opencode
+EXECUTION_BIN="codex"
+EXECUTION_MODEL=""
+
+HEARTBEAT_ENABLED="true"
+HEARTBEAT_MODE="normal" # fast | normal | slow | paused
+HEARTBEAT_FAST_MINUTES="5"
+HEARTBEAT_NORMAL_MINUTES="15"
+HEARTBEAT_SLOW_MINUTES="60"
+DEADLINE_MODE="false"
+
+REJUVENATION_ENABLED="true"
+
+RUNTIME_DIR=".arep"
+LOG_DIR=".arep/logs"
