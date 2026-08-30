@@ -25,8 +25,16 @@ The portable skill is under `a-rep/`.
 - `a-rep/prompts/`, cold-start heartbeat and rejuvenation prompts.
 - `a-rep/runtime/`, the tiny launcher, config example, and cron example.
 - `a-rep/scripts/bootstrap-agent.sh`, bootstrap for a new private PRIMARY-agent repository.
+- `a-rep/scaffold/agent-repo/`, canonical private-agent filesystem scaffold.
+- `a-rep/tests/`, lightweight runtime regression tests.
 
 A bootstrapped agent repository reserves Issues 1 through 20 for A Rep system use. Real work starts at Issue 21.
+
+## V1.1 hardening
+
+V1.1 adds a canonical private-agent scaffold with `admin/`, `config/`, `scratch/`, `procedures/`, and `work/` zones; moves recommended local runtime state under Git-ignored `.arep/`; splits raw logs from sanitized Git-visible operational logs; and adds automated launcher regression tests.
+
+Raw coding-agent output lives under `.arep/raw-logs/`. Concise sanitized operational logs may be tracked under `admin/logs/`.
 
 ## Runtime philosophy
 
@@ -38,4 +46,4 @@ No database, queue, custom orchestration server, workflow engine, or memory serv
 
 ## Current status
 
-A Rep V1 has completed its initial protocol, implementation, and acceptance passes and is ready for its first live persistent agent. See `CURRENT.md` for the tested scope and remaining real-world validation boundary.
+A Rep V1.1 is the current hardened V1 release. See `CURRENT.md` and `CHANGELOG.md`.
