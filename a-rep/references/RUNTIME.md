@@ -16,6 +16,8 @@ Heartbeat and rejuvenation use the same `flock` lease keyed by `AGENT_REPO`. If 
 
 This is a local V1 exclusion mechanism, not a distributed lock across machines. Do not deliberately schedule the same PRIMARY mutator on multiple machines in V1.
 
+The reference launcher therefore assumes a Unix-like environment with `flock` available.
+
 ## Heartbeat cadence
 
 Cron may wake the launcher more frequently than the desired agent cadence. The launcher checks whether the heartbeat is due and exits cheaply when it is not.
@@ -27,6 +29,8 @@ Supported modes are `fast`, `normal`, `slow`, and `paused`.
 PRIMARY may change the configured mode when reality warrants it and should record material rationale in Issue 16. Temporary workers may request changes through Issue 16 but do not own runtime configuration.
 
 The cron polling interval must be no slower than the configured fast interval if that fast cadence is expected to be achievable.
+
+A successful heartbeat records its completion time. A failed execution-engine invocation does not advance that timestamp and returns the execution engine's nonzero exit status so the next poll can retry and external supervision can observe the failure.
 
 ## Execution engines
 
@@ -45,10 +49,18 @@ Material durable events belong in the appropriate GitHub work Issue and in Issue
 
 Never intentionally print or persist secrets in agent output or durable records.
 
+## Bootstrap
+
+Bootstrap is intentionally strict because Issues 1 through 20 depend on an unused GitHub number space.
+
+The target must be a private repository with no Issues, no pull requests, and no existing commits. Bootstrap refuses an existing code history rather than overwriting it.
+
+The script clones the empty repository, creates the three agent zones and minimal configuration, makes the first commit on `main`, sets `origin/main` as the local upstream, then creates the twenty reserved Issues in order. Normal work may then begin at Issue 21.
+
 ## Installation shape
 
 Install or clone the public A Rep repository at a stable local path. Point `A_REP_SKILL_PATH` in the private agent configuration to its current `a-rep/SKILL.md`.
 
-Run `sh a-rep/scripts/bootstrap-agent.sh` once against a new private agent repository before creating normal work Issues. The repository must have an unused Issue and PR number space so the reserved Issues occupy numbers 1 through 20.
+Run `sh a-rep/scripts/bootstrap-agent.sh` once against a new empty private agent repository before creating normal work Issues.
 
 The runtime does not create or manage credentials, install coding agents, authenticate GitHub, or create the private GitHub repository itself.
