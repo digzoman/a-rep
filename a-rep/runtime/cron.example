@@ -1,8 +1,10 @@
-# A Rep V1 cron example.
+# A Rep V1.1 cron example.
 # Replace paths with the installed A Rep checkout and private agent checkout.
 # The five-minute heartbeat line is a poll. arep-run.sh applies fast/normal/slow/paused cadence from config.
+# Polls that find heartbeat not due exit cheaply and do not create Git-visible operational log entries.
 
 */5 * * * * cd /srv/fred && /bin/sh /opt/a-rep/a-rep/runtime/arep-run.sh heartbeat /srv/fred/config/arep.env
 
-# Nightly rejuvenation. The launcher skips it when disabled or when DEADLINE_MODE=true.
+# Optional rejuvenation example. Enable only after enough real execution history exists to justify self-improvement cycles.
+# The launcher skips rejuvenation when disabled or when DEADLINE_MODE=true.
 0 3 * * * cd /srv/fred && /bin/sh /opt/a-rep/a-rep/runtime/arep-run.sh rejuvenation /srv/fred/config/arep.env
