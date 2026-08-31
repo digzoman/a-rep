@@ -13,6 +13,7 @@ V1.2.1 is a small evidence-backed hardening release from Fred's first real Issue
 - Standardizes Issue 16 body as the current human-readable runtime snapshot and Issue 16 comments as runtime/cadence transition history, while live/tracked config remains authoritative.
 - Clarifies that routine runtime/cadence transitions belong in Issue 16; Issue 3 is reserved for cross-cutting actions, failures, recoveries, incidents, and major transitions.
 - Tightens deep-context loading: hot context is always read, but deep context is loaded only after current work/recovery needs are known and deeper information would materially affect the selected action. No-work state alone is not a reason to load it.
+- Requires PRIMARY to reconcile stale **cross-cutting current facts** in hot context after material changes, replacing stale current-state prose without turning hot context into a task chronology.
 
 ## V1.2 foundations retained
 
@@ -30,7 +31,7 @@ The runtime remains one tiny PRIMARY launcher plus cron wakeups. Guardian schedu
 
 Fred's first real work/acceptance test successfully demonstrated automatic pickup, normal-to-fast cadence switching, fresh-session recovery, explicit deadline-mode acceleration, durable handoffs/logging, runtime restoration, authority discipline, and clean completion. An independent Guardian verified VM/repository evidence rather than trusting Fred's narrative alone.
 
-The test also produced the V1.2.1 clarifications above: observed fast cycles were roughly 10 minutes start-to-start because the five-minute due interval began after successful completion and the five-minute cron poll added scheduler granularity; Issue 16's body briefly lagged behind actual config; and deep context had previously been loaded once when it was unnecessary.
+The test also produced the V1.2.1 clarifications above: observed fast cycles were roughly 10 minutes start-to-start because the five-minute due interval began after successful completion and the five-minute cron poll added scheduler granularity; Issue 16's body briefly lagged behind actual config; deep context had previously been loaded once when it was unnecessary; and Fred's hot context retained a pre-Issue-21 runtime sentence after the test, showing that current hot context needs explicit reconciliation when material cross-cutting facts change.
 
 ## V1.1 foundations retained
 
