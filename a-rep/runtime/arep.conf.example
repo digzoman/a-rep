@@ -14,8 +14,9 @@ EXECUTION_MODEL=""
 
 # Optional producer-provenance labels for launcher-run PRIMARY cycles.
 # Platform defaults to EXECUTION_DRIVER; Instance defaults to runtime-heartbeat/runtime-rejuvenation.
+# If this one config drives several cycle types, use a cycle-neutral host label.
 PROVENANCE_PLATFORM="Codex"
-PROVENANCE_INSTANCE="VM-heartbeat"
+PROVENANCE_INSTANCE="VM-runtime"
 
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="normal" # fast | normal | slow | paused
