@@ -1,4 +1,4 @@
-# A Rep V1.1 agent runtime config. No secrets.
+# A Rep V1.3 agent runtime config. No secrets.
 AGENT_ID="fred"
 AGENT_ROLE="Founder"
 AGENT_REPO="digzoman/fred"
@@ -11,6 +11,11 @@ A_REP_SKILL_PATH="/opt/a-rep/a-rep/SKILL.md"
 EXECUTION_DRIVER="codex" # codex | opencode
 EXECUTION_BIN="codex"
 EXECUTION_MODEL=""
+
+# Optional producer-provenance labels for launcher-run PRIMARY cycles.
+# Platform defaults to EXECUTION_DRIVER; Instance defaults to runtime-heartbeat/runtime-rejuvenation.
+PROVENANCE_PLATFORM="Codex"
+PROVENANCE_INSTANCE="VM-heartbeat"
 
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="normal" # fast | normal | slow | paused
