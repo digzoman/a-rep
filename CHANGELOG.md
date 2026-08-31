@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1
+
+Small hardening release based on Fred's first real Issue 21 live acceptance test and independent Guardian verification.
+
+- Clarified that heartbeat due time is anchored to the previous successful heartbeat **completion**, because `.arep/heartbeat.last` is written only after a successful execution.
+- Documented that scheduler polling can add up to roughly one poll interval after due time; `fast=5` is therefore not an exact five-minute start-to-start guarantee.
+- Standardized Issue 16 body as the current human-readable runtime snapshot and Issue 16 comments as material runtime/cadence transition history.
+- Clarified that live/tracked runtime configuration and direct host evidence remain authoritative if Issue prose is stale.
+- Clarified that routine runtime/cadence transitions belong in Issue 16; Issue 3 is for cross-cutting actions, failures, recoveries, incidents, and major transitions rather than duplicate runtime logging.
+- Tightened `agent-context-deep.md` loading so it is task/recovery-gated after baseline hot-context/system/work recovery; no active work by itself is not a reason to load deep context.
+- Kept launcher code and runtime architecture unchanged.
+
 ## 1.2.0
 
 Context and independent-review release based on pre-Issue-21 live Fred discussion.
