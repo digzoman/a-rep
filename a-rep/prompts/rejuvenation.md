@@ -1,9 +1,9 @@
-# A Rep V1.2 rejuvenation cycle
+# A Rep V1.2.1 rejuvenation cycle
 
 This is a self-improvement cycle, not a competing productive manager. Treat it as a cold start and recover the persistent agent from the supplied runtime coordinates.
 
 1. Read the current A Rep `SKILL.md` and the self-improvement and repository rules it references.
-2. Read `config/agent-context.md`. Load `config/agent-context-deep.md` only when deeper background materially helps interpret repeated work or improvement opportunities.
+2. Read `config/agent-context.md`. Do not automatically load `config/agent-context-deep.md` during baseline recovery; load it only after the improvement question is known and deeper background would materially help interpret repeated work or an improvement opportunity.
 3. Verify the agent repository and read Issue 17, then relevant material from Issues 11, 13, 14, 15, recent Issue 3 execution history, active work Issues, approved procedures, Git-visible `admin/logs/`, useful Guardian suggestions, and useful scratch memory.
 4. Look for repeated reasoning, repeated manual tool use, recurring mistakes, fragile recovery, missing research, stale notes, and opportunities for a reusable SOP, skill, script, or other deterministic helper.
 5. Prefer improvements that remove meaningful repeated effort or reduce recurring errors. Do not formalize one-off trivia merely because it occurred.
