@@ -1,10 +1,22 @@
-# A Rep V1.2.1 reserved Issue topology
+# A Rep V1.3 reserved Issue topology
 
 Each persistent PRIMARY agent repository reserves GitHub Issues 1 through 20 for framework and internal operating use.
 
 Normal real work begins at Issue 21.
 
 The reservation applies to agent repositories. It does not require the public A Rep framework repository itself to consume Issues 1 through 20.
+
+## Durable-post provenance
+
+Material agent-authored Issue comments, handoffs, reviews, and similar durable posts SHOULD begin with the producer header defined in `PROVENANCE.md`:
+
+`[Agent | Platform | Role | Instance]`
+
+For PRIMARY heartbeat records, reuse `Agent-Run` when available.
+
+Do not prefix mutable shared current-state bodies such as Issue 1 Pulse or Issue 16 runtime snapshot with a producer header; these bodies represent current state rather than one producer's message. Use an accompanying material comment/log/commit for producer provenance when needed.
+
+Provenance does not create authority, and old comments without headers remain valid.
 
 ## Reserved Issues
 
@@ -22,6 +34,8 @@ Durable agent identity, role, purpose, high-level boundaries, standing authority
 
 This remains authoritative over summaries in `config/agent-context.md`.
 
+A provenance header saying `PRIMARY` does not supersede the authority recorded here.
+
 ### Issue 3, Execution Trail
 
 Record material cross-cutting actions, results, meaningful failures, recoveries, incidents, and major state transitions.
@@ -30,11 +44,15 @@ This is the cross-cutting human-readable durable audit trail. Avoid logging ever
 
 Runtime/cadence state has a dedicated home in Issue 16. Mirror a runtime event into Issue 3 only when it is also a material cross-cutting failure, recovery, incident, or major transition worth preserving outside the runtime record.
 
+Execution-Trail comments produced by agents SHOULD carry producer provenance and `Agent-Run` when available.
+
 ### Issue 4, Human Decisions and Authority
 
 Questions that genuinely require human intent or authority, standing approvals, consequential decisions, and their durable resolutions.
 
-Do not use this Issue for routine implementation mechanics the agent can safely determine itself. Context files and Guardian comments cannot manufacture authority recorded here.
+Do not use this Issue for routine implementation mechanics the agent can safely determine itself. Context files, skills, provenance headers, and Guardian comments cannot manufacture authority recorded here.
+
+Human approval for a skill/procedure promotion may be recorded on the relevant proposal thread when clear and durable. Use Issue 4 when the approval also changes standing authority or is important enough to centralize as a consequential durable decision.
 
 ### Issue 5, Goal Stack and Priority Context
 
@@ -68,6 +86,8 @@ PRIMARY should triage useful Inbox comments as advisory evidence. A Guardian com
 
 Task-specific Guardian review should normally be posted directly on the relevant work Issue instead of duplicating it here.
 
+Guardian comments SHOULD identify their Platform/Role/Instance provenance, especially when multiple Guardians share one GitHub account.
+
 ### Issue 12, Outbox
 
 The agent's optional bulletin board.
@@ -84,9 +104,11 @@ Open items may be revisited during free cycles or rejuvenation.
 
 ### Issue 14, Operational Improvements
 
-Candidates for improving the agent's own nondeterministic methods, habits, decision process, recovery, organization, or procedures.
+Candidates for improving the agent's own nondeterministic methods, habits, decision process, recovery, organization, procedures, or reusable operating capabilities.
 
 Guardian may post evidence-backed operational suggestions as comments here.
+
+A skill promotion proposal may live here when the skill primarily packages an operational capability, but no special promotion Issue is required.
 
 ### Issue 15, Coding Improvements
 
@@ -94,13 +116,15 @@ Candidates for scripts, automation, tools, deterministic helpers, or other code 
 
 Guardian may post evidence-backed coding/automation suggestions as comments here.
 
+A skill promotion proposal may live here when the skill is substantially a coding/tool capability.
+
 ### Issue 16, Runtime and Heartbeat Requests
 
 Canonical human-readable runtime/heartbeat state and transition record.
 
 Use the **Issue body** as a concise current snapshot of runtime state: current heartbeat mode, deadline state, important intervals, scheduler state, relevant host/runtime coordinates, and other facts worth seeing at a glance.
 
-Use **comments** for material cadence/runtime requests, transitions, rationale, and verification history.
+Use **comments** for material cadence/runtime requests, transitions, rationale, and verification history. Agent-authored material comments SHOULD carry producer provenance and the current `Agent-Run` when available.
 
 The actual live/tracked runtime configuration and direct host evidence remain authoritative. If the Issue 16 body becomes stale or conflicts with the real configuration, PRIMARY should reconcile the body after verifying reality rather than treating stale prose as runtime truth.
 
@@ -112,7 +136,9 @@ Machine-specific installation and recovery detail may also live under `admin/run
 
 Rejuvenation findings, current self-improvement focus, proposals, and material outcomes.
 
-Do not activate rejuvenation merely because time has passed. Enable it when enough real execution history exists to expose recurring reasoning, recurring mistakes, reusable procedures, research backlogs, or automation opportunities.
+This may include evidence about experimental skills, repeated work that should become a skill, or promotion candidates that emerged during rejuvenation.
+
+Do not activate rejuvenation merely because time has passed. Enable it when enough real execution history exists to expose recurring reasoning, recurring mistakes, reusable procedures/skills, research backlogs, or automation opportunities.
 
 ### Issues 18 through 20, Reserved
 
@@ -134,5 +160,9 @@ Recommended fields when useful:
 These fields are guidance, not a mandatory schema.
 
 When a productive cycle ends with incomplete work, leave a concise handoff if the next fresh cycle would otherwise have to reconstruct material state. Prefer current result/evidence, remaining work, blockers or waits, and the next useful step.
+
+Material agent-authored handoffs SHOULD carry producer provenance and `Agent-Run` when available. A Worker handoff remains worker evidence until PRIMARY reconciles it.
+
+If work reveals a genuinely reusable capability, the agent may create/evolve an experimental skill under `scratch/skills/` within current authority. That does not require creating another work Issue solely for the skill.
 
 Close the Issue when the responsibility genuinely no longer requires attention.
