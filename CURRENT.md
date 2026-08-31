@@ -1,55 +1,128 @@
 # Current A Rep version
 
-Current version, A Rep V1.2.1.
+Current version, A Rep V1.3.0.
 
 This repository uses a consolidated-current model. The current `a-rep/SKILL.md` and current supporting files define active behaviour. Historical changes belong in Git history or releases rather than additive patches that every agent must mentally compose.
 
-## What V1.2.1 changes
+## What V1.3 adds
 
-V1.2.1 is a small evidence-backed hardening release from Fred's first real Issue 21 acceptance test. It does not change the launcher architecture.
+V1.3 is an additive feature release based on live multi-agent use around Fred.
 
-- Documents that heartbeat cadence is anchored to the previous **successful completion**, not the previous start.
-- Makes clear that scheduler polling can add up to roughly one poll interval after a heartbeat becomes due, so `fast=5` is not an exact five-minute start-to-start promise.
-- Standardizes Issue 16 body as the current human-readable runtime snapshot and Issue 16 comments as runtime/cadence transition history, while live/tracked config remains authoritative.
-- Clarifies that routine runtime/cadence transitions belong in Issue 16; Issue 3 is reserved for cross-cutting actions, failures, recoveries, incidents, and major transitions.
-- Tightens deep-context loading: hot context is always read, but deep context is loaded only after current work/recovery needs are known and deeper information would materially affect the selected action. No-work state alone is not a reason to load it.
-- Requires PRIMARY to reconcile stale **cross-cutting current facts** in hot context after material changes, replacing stale current-state prose without turning hot context into a task chronology.
+Two concrete problems emerged:
+
+1. Multiple execution/review surfaces can post through the same GitHub account, so native GitHub authorship no longer reliably identifies which actual agent/platform/role/instance produced a durable record.
+2. Live use showed agents naturally discovering reusable capabilities, including Hermes creating a reusable skill without being explicitly asked, while A Rep previously had only partial folder-level skill support rather than a first-class experimental-to-approved lifecycle.
+
+V1.3 addresses both with lightweight conventions rather than new orchestration infrastructure.
+
+### Producer provenance
+
+Material agent-authored comments, reviews, handoffs, and similar durable GitHub posts SHOULD begin with:
+
+`[Agent | Platform | Role | Instance]`
+
+Core Roles are:
+
+- `PRIMARY`
+- `Worker`
+- `Guardian`
+- `Reviewer`
+- `Voice`
+
+Agent-authored Git commits SHOULD carry:
+
+`Agent-Provenance: Agent/Platform/Role/Instance`
+
+Launcher-run PRIMARY cycles also receive a UTC-stamped `Agent-Run` identifier correlated with the raw-log timestamp.
+
+The launcher accepts optional non-secret `PROVENANCE_PLATFORM` and `PROVENANCE_INSTANCE` labels and otherwise uses lightweight fallbacks.
+
+Provenance is deliberately a SHOULD convention: missing provenance does not invalidate otherwise useful historical/current evidence.
+
+Provenance identifies the producer. It does **not** create authority.
+
+### First-class skills
+
+Experimental reusable capabilities now have a canonical home:
+
+`scratch/skills/<skill-name>/SKILL.md`
+
+Approved durable capabilities remain under:
+
+`procedures/skills/<skill-name>/SKILL.md`
+
+PRIMARY may autonomously create, test, edit, and evolve experimental skills within current work authority.
+
+Promotion into `procedures/skills/` requires review and explicit human approval.
+
+The normal lifecycle is:
+
+`live work -> learning -> experimental skill -> evidence -> promotion proposal -> review -> human approval -> approved skill`
+
+Skills normally use directories so supporting scripts/templates/examples can grow with the capability.
+
+A concise `trigger` metadata field supports cheap relevance routing before full skill content is loaded. Around 70 characters is a portability target, not a hard framework parser limit.
+
+Git is the authoritative experimental history; semver is optional in scratch. Approved skills SHOULD carry an explicit version.
+
+Approved skills should normally depend only on approved/stable resources and must not silently depend on mutable experimental scratch material.
+
+No manually synchronized INDEX, skill registry, package manager, marketplace, database, or skill-management API is added.
+
+Skills describe capability/how. They never grant authority for the underlying action.
+
+## Runtime change
+
+The V1.3 launcher change is intentionally tiny.
+
+For every executed heartbeat/rejuvenation, the launcher already creates a UTC timestamp for the raw log. V1.3 reuses that timestamp to generate:
+
+`Agent-Run: <cycle>-<timestamp>`
+
+It injects the persistent Agent, Platform, Role `PRIMARY`, Instance, and run ID into the execution prompt.
+
+Cadence, completion-anchored due timing, deadline behaviour, flock ownership, heartbeat success state, and one-PRIMARY architecture are unchanged.
+
+The runtime regression suite now includes provenance/run-ID prompt injection checks.
+
+## V1.2.1 foundations retained
+
+- heartbeat cadence anchored to successful completion;
+- scheduler polling granularity documented;
+- Issue 16 body = current runtime snapshot, comments = material transition history;
+- Issue 3 reserved for cross-cutting material events rather than routine runtime duplication;
+- hot context always read and reconciled when materially stale;
+- deep context loaded only after current task/recovery need is known and it materially helps.
 
 ## V1.2 foundations retained
 
-- `config/agent-context.md` as concise hot strategic context read every PRIMARY and Guardian cycle.
-- `config/agent-context-deep.md` as richer context loaded only when materially useful.
-- Strong cross-cycle durable handoffs for incomplete work.
-- Heartbeat PRIMARY may do work directly or use bounded subagents/workers while remaining responsible for reconciliation.
-- Optional provider-agnostic Guardian Angel review protocol.
-- Guardian communicates primarily through Issue comments.
-- `DEADLINE_MODE` remains explicit configured state; the launcher does not infer GitHub Issue deadlines.
-
-The runtime remains one tiny PRIMARY launcher plus cron wakeups. Guardian scheduling is optional and external.
-
-## First live Issue 21 evidence
-
-Fred's first real work/acceptance test successfully demonstrated automatic pickup, normal-to-fast cadence switching, fresh-session recovery, explicit deadline-mode acceleration, durable handoffs/logging, runtime restoration, authority discipline, and clean completion. An independent Guardian verified VM/repository evidence rather than trusting Fred's narrative alone.
-
-The test also produced the V1.2.1 clarifications above: observed fast cycles were roughly 10 minutes start-to-start because the five-minute due interval began after successful completion and the five-minute cron poll added scheduler granularity; Issue 16's body briefly lagged behind actual config; deep context had previously been loaded once when it was unnecessary; and Fred's hot context retained a pre-Issue-21 runtime sentence after the test, showing that current hot context needs explicit reconciliation when material cross-cutting facts change.
-
-## V1.1 foundations retained
-
-- canonical private-agent scaffold;
-- `admin/logs/` sanitized Git-visible operational logs;
-- `.arep/raw-logs/` raw local output;
-- `.arep/primary.lock` and `.arep/heartbeat.last` local state;
-- scaffold-based bootstrap;
-- launcher regression tests.
+- concise hot/deep strategic context layers;
+- strong fresh-session handoffs;
+- one persistent PRIMARY plus bounded temporary workers;
+- optional provider-agnostic Guardian Angel review;
+- explicit `DEADLINE_MODE` rather than automatic deadline inference.
 
 ## Deliberate exclusions / evidence-gated follow-up
 
-V1.2.1 still excludes persistent multi-PRIMARY coordination, a team repository, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, and other orchestration infrastructure.
+V1.3 still excludes persistent multi-PRIMARY coordination, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, a skill registry/marketplace, and other orchestration infrastructure.
 
-Public framework Issues track deferred work and state why each should wait for more evidence, including bounded timeout/stuck-cycle handling, scaffold migration tooling, optional execution-thread resumption, automatic deadline awareness, a reusable new-agent acceptance-test template, and possible first-class Guardian scheduling support.
+Public framework Issues continue to track evidence-gated follow-up including bounded timeout/stuck-cycle handling, scaffold migration tooling, optional execution-thread resumption, automatic deadline awareness, reusable live acceptance testing, first-class Guardian scheduling only if external scheduling proves insufficient, and the future recurring-responsibility/scheduled-subagent coordination vision.
 
-## First live agent
+## Existing-agent migration
 
-Fred is live on the V1.2 architecture and should be synchronized to V1.2.1 before further acceptance testing.
+V1.3 is additive and backward compatible.
 
-The highest-value non-framework improvement is still to populate Fred's hot/deep context with real Ampgent founder strategy, assets, distribution advantages, constraints, and prior decisions before asking him for consequential strategic recommendations. The framework deliberately does not invent organization-specific strategy.
+Existing private agents do not need history rewritten.
+
+For an existing agent such as Fred, the recommended hot patch is:
+
+- sync the public A Rep checkout to V1.3;
+- create `scratch/skills/README.md` / directory and update existing `procedures/skills/README.md` guidance;
+- add optional provenance labels to runtime config when a more useful Platform/Instance name is desired;
+- update agent/runtime README guidance as appropriate;
+- do not retroactively relabel old Issue comments or commits;
+- preserve all existing work/procedures/scratch state;
+- run launcher/bootstrap syntax checks and `a-rep/tests/runtime-test.sh`;
+- let future material comments/commits adopt provenance naturally.
+
+Do not manufacture a first skill merely to test the folder. Let the first experimental skill emerge from real repeated work.
