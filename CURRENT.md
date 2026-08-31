@@ -1,23 +1,36 @@
 # Current A Rep version
 
-Current version, A Rep V1.2.
+Current version, A Rep V1.2.1.
 
 This repository uses a consolidated-current model. The current `a-rep/SKILL.md` and current supporting files define active behaviour. Historical changes belong in Git history or releases rather than additive patches that every agent must mentally compose.
 
-## What V1.2 adds
+## What V1.2.1 changes
 
-V1.2 strengthens context and independent review without changing the one-PRIMARY architecture.
+V1.2.1 is a small evidence-backed hardening release from Fred's first real Issue 21 acceptance test. It does not change the launcher architecture.
+
+- Documents that heartbeat cadence is anchored to the previous **successful completion**, not the previous start.
+- Makes clear that scheduler polling can add up to roughly one poll interval after a heartbeat becomes due, so `fast=5` is not an exact five-minute start-to-start promise.
+- Standardizes Issue 16 body as the current human-readable runtime snapshot and Issue 16 comments as runtime/cadence transition history, while live/tracked config remains authoritative.
+- Clarifies that routine runtime/cadence transitions belong in Issue 16; Issue 3 is reserved for cross-cutting actions, failures, recoveries, incidents, and major transitions.
+- Tightens deep-context loading: hot context is always read, but deep context is loaded only after current work/recovery needs are known and deeper information would materially affect the selected action. No-work state alone is not a reason to load it.
+
+## V1.2 foundations retained
 
 - `config/agent-context.md` as concise hot strategic context read every PRIMARY and Guardian cycle.
 - `config/agent-context-deep.md` as richer context loaded only when materially useful.
-- Heartbeat prompt explicitly loads hot context before selecting work.
-- Stronger cross-cycle durable handoff guidance for incomplete work.
-- Explicit rule that heartbeat PRIMARY may do work directly or use bounded subagents/workers while remaining responsible for reconciliation.
-- Optional provider-agnostic Guardian Angel review prompt and protocol.
-- Guardian communicates primarily through Issue comments, especially Issue 11, relevant work Issues, and Issues 14/15.
-- Explicit clarification that `DEADLINE_MODE` is configured state; the launcher does not infer GitHub Issue deadlines.
+- Strong cross-cycle durable handoffs for incomplete work.
+- Heartbeat PRIMARY may do work directly or use bounded subagents/workers while remaining responsible for reconciliation.
+- Optional provider-agnostic Guardian Angel review protocol.
+- Guardian communicates primarily through Issue comments.
+- `DEADLINE_MODE` remains explicit configured state; the launcher does not infer GitHub Issue deadlines.
 
 The runtime remains one tiny PRIMARY launcher plus cron wakeups. Guardian scheduling is optional and external.
+
+## First live Issue 21 evidence
+
+Fred's first real work/acceptance test successfully demonstrated automatic pickup, normal-to-fast cadence switching, fresh-session recovery, explicit deadline-mode acceleration, durable handoffs/logging, runtime restoration, authority discipline, and clean completion. An independent Guardian verified VM/repository evidence rather than trusting Fred's narrative alone.
+
+The test also produced the V1.2.1 clarifications above: observed fast cycles were roughly 10 minutes start-to-start because the five-minute due interval began after successful completion and the five-minute cron poll added scheduler granularity; Issue 16's body briefly lagged behind actual config; and deep context had previously been loaded once when it was unnecessary.
 
 ## V1.1 foundations retained
 
@@ -28,14 +41,14 @@ The runtime remains one tiny PRIMARY launcher plus cron wakeups. Guardian schedu
 - scaffold-based bootstrap;
 - launcher regression tests.
 
-## Deliberate exclusions
+## Deliberate exclusions / evidence-gated follow-up
 
-V1.2 still excludes persistent multi-PRIMARY coordination, a team repository, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, and other orchestration infrastructure.
+V1.2.1 still excludes persistent multi-PRIMARY coordination, a team repository, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, and other orchestration infrastructure.
 
-Evidence-gated future Issues track bounded execution timeout/stuck-cycle handling, versioned scaffold migration, optional execution-thread resumption, and possible automatic deadline awareness.
+Public framework Issues track deferred work and state why each should wait for more evidence, including bounded timeout/stuck-cycle handling, scaffold migration tooling, optional execution-thread resumption, automatic deadline awareness, a reusable new-agent acceptance-test template, and possible first-class Guardian scheduling support.
 
 ## First live agent
 
-Fred should be patched to the V1.2 context scaffold and the live runtime checkout synchronized before receiving Issue 21.
+Fred is live on the V1.2 architecture and should be synchronized to V1.2.1 before further acceptance testing.
 
-Fred's hot context should be populated with real founder mission/strategic priorities before consequential real work; the framework deliberately does not invent organization-specific strategy.
+The highest-value non-framework improvement is still to populate Fred's hot/deep context with real Ampgent founder strategy, assets, distribution advantages, constraints, and prior decisions before asking him for consequential strategic recommendations. The framework deliberately does not invent organization-specific strategy.
