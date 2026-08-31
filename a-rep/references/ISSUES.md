@@ -1,4 +1,4 @@
-# A Rep V1.2 reserved Issue topology
+# A Rep V1.2.1 reserved Issue topology
 
 Each persistent PRIMARY agent repository reserves GitHub Issues 1 through 20 for framework and internal operating use.
 
@@ -24,9 +24,11 @@ This remains authoritative over summaries in `config/agent-context.md`.
 
 ### Issue 3, Execution Trail
 
-Record material actions, results, meaningful failures, recoveries, and major state transitions.
+Record material cross-cutting actions, results, meaningful failures, recoveries, incidents, and major state transitions.
 
-This is the cross-cutting human-readable durable audit trail. Avoid logging every scheduler poll or routine heartbeat. More granular sanitized executed-cycle history may live under tracked `admin/logs/`.
+This is the cross-cutting human-readable durable audit trail. Avoid logging every scheduler poll, routine heartbeat, or routine runtime/cadence transition merely because it happened. More granular sanitized executed-cycle history may live under tracked `admin/logs/`.
+
+Runtime/cadence state has a dedicated home in Issue 16. Mirror a runtime event into Issue 3 only when it is also a material cross-cutting failure, recovery, incident, or major transition worth preserving outside the runtime record.
 
 ### Issue 4, Human Decisions and Authority
 
@@ -60,7 +62,7 @@ Reserved for future V1.x internal needs. Do not create semantics merely to fill 
 
 Targeted inbound communication intended for this PRIMARY.
 
-This includes future persistent-agent coordination and V1.2 Guardian Angel cross-cutting review, questions, warnings, or offers of bounded help.
+This includes future persistent-agent coordination and Guardian Angel cross-cutting review, questions, warnings, or offers of bounded help.
 
 PRIMARY should triage useful Inbox comments as advisory evidence. A Guardian comment does not itself change priorities, create authority, or prove that delegated work started.
 
@@ -94,9 +96,15 @@ Guardian may post evidence-backed coding/automation suggestions as comments here
 
 ### Issue 16, Runtime and Heartbeat Requests
 
-Requests, rationale, current host/runtime state, and material cadence changes.
+Canonical human-readable runtime/heartbeat state and transition record.
 
-The actual runtime configuration remains authoritative. Temporary workers and Guardian may request a change here but do not independently race to change active schedule state.
+Use the **Issue body** as a concise current snapshot of runtime state: current heartbeat mode, deadline state, important intervals, scheduler state, relevant host/runtime coordinates, and other facts worth seeing at a glance.
+
+Use **comments** for material cadence/runtime requests, transitions, rationale, and verification history.
+
+The actual live/tracked runtime configuration and direct host evidence remain authoritative. If the Issue 16 body becomes stale or conflicts with the real configuration, PRIMARY should reconcile the body after verifying reality rather than treating stale prose as runtime truth.
+
+Temporary workers and Guardian may request a change here but do not independently race to change active schedule state.
 
 Machine-specific installation and recovery detail may also live under `admin/runtime/` in the private agent repository.
 
