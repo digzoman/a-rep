@@ -77,6 +77,9 @@ case "$CYCLE" in
 esac
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+RUN_ID="${PROMPT_KIND}-${STAMP}"
+PROVENANCE_PLATFORM_VALUE="${PROVENANCE_PLATFORM:-$EXECUTION_DRIVER}"
+PROVENANCE_INSTANCE_VALUE="${PROVENANCE_INSTANCE:-runtime-$PROMPT_KIND}"
 LOG="$LOG_DIR/${PROMPT_KIND}-${STAMP}.log"
 PROMPT_FILE="$(dirname "$A_REP_SKILL_PATH")/prompts/${PROMPT_KIND}.md"
 [ -f "$PROMPT_FILE" ] || { echo "Missing prompt: $PROMPT_FILE" >&2; exit 2; }
@@ -85,7 +88,7 @@ PROMPT="$(cat "$PROMPT_FILE")
 
 Runtime coordinates for this invocation.
 Agent ID: $AGENT_ID
-Agent role: ${AGENT_ROLE:-unspecified}
+Agent charter role: ${AGENT_ROLE:-unspecified}
 Agent repository: $AGENT_REPO
 Agent repository checkout: $AGENT_REPO_DIR
 A Rep repository: $A_REP_REPO
@@ -94,6 +97,14 @@ A Rep skill path: $A_REP_SKILL_PATH
 Cycle: $PROMPT_KIND
 Heartbeat mode: $HEARTBEAT_MODE
 Deadline mode: ${DEADLINE_MODE:-false}
+
+Producer provenance for this PRIMARY invocation.
+Agent: $AGENT_ID
+Platform: $PROVENANCE_PLATFORM_VALUE
+Role: PRIMARY
+Instance: $PROVENANCE_INSTANCE_VALUE
+Agent-Run: $RUN_ID
+Use this exact provenance tuple and Agent-Run on material durable comments, handoffs, sanitized execution records, and agent-authored commits when practical, following references/PROVENANCE.md.
 "
 
 run_agent() {
