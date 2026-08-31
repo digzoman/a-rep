@@ -12,11 +12,19 @@ AGENT="$TMP/agent"
 CONF="$AGENT/config/arep.env"
 FAKE_BIN="$TMP/fake-codex"
 COUNT="$TMP/count"
+PROMPT_CAPTURE="$TMP/prompt"
 mkdir -p "$AGENT/config"
 
 cat > "$FAKE_BIN" <<'FAKE'
 #!/bin/sh
 printf 'run\n' >> "${FAKE_COUNT_FILE:?}"
+last=""
+for arg in "$@"; do
+  last="$arg"
+done
+if [ -n "${FAKE_PROMPT_FILE:-}" ]; then
+  printf '%s\n' "$last" > "$FAKE_PROMPT_FILE"
+fi
 exit "${FAKE_EXIT_CODE:-0}"
 FAKE
 chmod +x "$FAKE_BIN"
@@ -30,6 +38,12 @@ assert_eq() {
   [ "$1" = "$2" ] || fail "$3: expected '$1', got '$2'"
 }
 
+assert_prompt_contains() {
+  pattern="$1"
+  label="$2"
+  grep -E "$pattern" "$PROMPT_CAPTURE" >/dev/null || fail "$label"
+}
+
 runs() {
   if [ -f "$COUNT" ]; then
     wc -l < "$COUNT" | tr -d ' '
@@ -39,7 +53,7 @@ runs() {
 }
 
 reset_state() {
-  rm -f "$COUNT"
+  rm -f "$COUNT" "$PROMPT_CAPTURE"
   rm -rf "$AGENT/.arep"
   mkdir -p "$AGENT/.arep"
 }
@@ -59,6 +73,8 @@ A_REP_SKILL_PATH="$SKILL"
 EXECUTION_DRIVER="codex"
 EXECUTION_BIN="$FAKE_BIN"
 EXECUTION_MODEL=""
+PROVENANCE_PLATFORM=""
+PROVENANCE_INSTANCE=""
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="$mode"
 HEARTBEAT_FAST_MINUTES="5"
@@ -74,11 +90,11 @@ EOF
 }
 
 run_heartbeat() {
-  FAKE_COUNT_FILE="$COUNT" FAKE_EXIT_CODE="${1:-0}" sh "$LAUNCHER" heartbeat "$CONF" >/dev/null 2>&1
+  FAKE_COUNT_FILE="$COUNT" FAKE_PROMPT_FILE="$PROMPT_CAPTURE" FAKE_EXIT_CODE="${1:-0}" sh "$LAUNCHER" heartbeat "$CONF" >/dev/null 2>&1
 }
 
 run_rejuvenation() {
-  FAKE_COUNT_FILE="$COUNT" FAKE_EXIT_CODE="${1:-0}" sh "$LAUNCHER" rejuvenation "$CONF" >/dev/null 2>&1
+  FAKE_COUNT_FILE="$COUNT" FAKE_PROMPT_FILE="$PROMPT_CAPTURE" FAKE_EXIT_CODE="${1:-0}" sh "$LAUNCHER" rejuvenation "$CONF" >/dev/null 2>&1
 }
 
 # Missing configuration must fail clearly.
@@ -97,6 +113,25 @@ assert_eq 0 "$(runs)" "normal due-skip"
 printf '%s\n' "$(( $(date +%s) - 901 ))" > "$AGENT/.arep/heartbeat.last"
 run_heartbeat
 assert_eq 1 "$(runs)" "normal due run"
+
+# V1.3 PRIMARY provenance/run ID is injected without a separate registry.
+[ -f "$PROMPT_CAPTURE" ] || fail "heartbeat prompt capture missing"
+assert_prompt_contains '^Agent: test$' "heartbeat provenance agent missing"
+assert_prompt_contains '^Platform: codex$' "heartbeat provenance platform fallback missing"
+assert_prompt_contains '^Role: PRIMARY$' "heartbeat provenance role missing"
+assert_prompt_contains '^Instance: runtime-heartbeat$' "heartbeat provenance instance fallback missing"
+assert_prompt_contains '^Agent-Run: heartbeat-[0-9]{8}T[0-9]{6}Z$' "heartbeat run ID missing or malformed"
+
+# Explicit provenance labels override launcher fallbacks.
+reset_state
+write_config normal false true
+cat >> "$CONF" <<'EOF'
+PROVENANCE_PLATFORM="Codex"
+PROVENANCE_INSTANCE="test-vm"
+EOF
+run_heartbeat
+assert_prompt_contains '^Platform: Codex$' "explicit provenance platform missing"
+assert_prompt_contains '^Instance: test-vm$' "explicit provenance instance missing"
 
 # Fast cadence.
 reset_state
@@ -133,7 +168,7 @@ assert_eq 0 "$(runs)" "paused deadline suppression"
 reset_state
 write_config normal false true
 set +e
-FAKE_COUNT_FILE="$COUNT" FAKE_EXIT_CODE=23 sh "$LAUNCHER" heartbeat "$CONF" >/dev/null 2>&1
+FAKE_COUNT_FILE="$COUNT" FAKE_PROMPT_FILE="$PROMPT_CAPTURE" FAKE_EXIT_CODE=23 sh "$LAUNCHER" heartbeat "$CONF" >/dev/null 2>&1
 rc=$?
 set -e
 assert_eq 23 "$rc" "failed execution exit"
@@ -175,11 +210,13 @@ write_config normal true true
 run_rejuvenation
 assert_eq 0 "$(runs)" "rejuvenation deadline suppression"
 
-# Enabled rejuvenation runs and uses raw-logs.
+# Enabled rejuvenation runs, uses raw-logs, and receives a run ID.
 reset_state
 write_config normal false true
 run_rejuvenation
 assert_eq 1 "$(runs)" "rejuvenation execution"
 find "$AGENT/.arep/raw-logs" -type f -name 'rejuvenation-*.log' | grep . >/dev/null || fail "raw rejuvenation log missing"
+assert_prompt_contains '^Instance: runtime-rejuvenation$' "rejuvenation provenance instance missing"
+assert_prompt_contains '^Agent-Run: rejuvenation-[0-9]{8}T[0-9]{6}Z$' "rejuvenation run ID missing or malformed"
 
 echo "A Rep runtime tests passed."
