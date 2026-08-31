@@ -72,6 +72,8 @@ A Rep standardizes two durable context files.
 
 `config/agent-context.md` is hot context. PRIMARY reads it on every heartbeat and Guardian reads it on every review cycle. Keep it concise and current: a short identity/role summary, mission, cross-cutting priorities, decision principles, and only the context worth loading every wake.
 
+When a material cross-cutting current fact in hot context becomes stale, PRIMARY should reconcile it after verifying reality. Replace stale current-state prose rather than appending chronology, and do not copy ordinary work-Issue detail into hot context.
+
 `config/agent-context-deep.md` is cold context. Do not load it automatically as part of baseline cold-start recovery. Load it only after current work/recovery needs are known and the hot context points to it or information absent from hot context would materially affect the selected action. Having no active work, by itself, is not a reason to read deep context.
 
 Context files support interpretation. They do not supersede trusted human instruction, Issue 2 Identity and Charter, Issue 4 Human Decisions and Authority, approved procedures, runtime configuration, or direct current evidence.
