@@ -1,4 +1,4 @@
-# A Rep V1.2 Guardian Angel
+# A Rep V1.2.1 Guardian Angel
 
 Guardian Angel is an optional external review loop for a persistent A Rep PRIMARY.
 
@@ -25,7 +25,7 @@ Guardian reads the same durable context hierarchy as PRIMARY.
 
 Always read `config/agent-context.md`.
 
-Read `config/agent-context-deep.md` only when the hot context points to it, the active work is unclear, or deeper background materially improves the review.
+Do not automatically read `config/agent-context-deep.md` during baseline review recovery. First recover the relevant system/work state and identify the review question. Load deep context only when the hot context points to relevant deep material or information absent from hot context would materially improve the current review. Having no active work is not, by itself, a reason to read the deep file.
 
 Then inspect relevant system Issues, work Issues 21+, `admin/logs/`, procedures, work artifacts, and direct external evidence as needed.
 
