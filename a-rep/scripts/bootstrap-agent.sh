@@ -98,7 +98,9 @@ Capture only information worth loading every cycle.
 
 ## When to load deep context
 
-Read `config/agent-context-deep.md` when active work needs richer organizational history, strategy, stakeholders, constraints, terminology, or background than this short file provides.
+Do not read `config/agent-context-deep.md` automatically during baseline cold-start recovery. First recover current system/work state and identify the likely task or recovery need.
+
+Load deep context only when this hot file points to relevant deep material or when information absent from hot context would materially affect the selected action. Having no active work, by itself, is not a reason to read the deep file.
 EOFCONTEXT
 
 cat > README.md <<EOFREADME
