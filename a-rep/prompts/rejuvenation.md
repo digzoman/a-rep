@@ -1,4 +1,4 @@
-# A Rep V1.3 rejuvenation cycle
+# A Rep V1.4 rejuvenation cycle
 
 This is a self-improvement cycle, not a competing productive manager. Treat it as a cold start and recover the persistent agent from the supplied runtime coordinates.
 
@@ -15,7 +15,7 @@ This is a self-improvement cycle, not a competing productive manager. Treat it a
 11. If important productive work has become urgent, do not compete with it. Record anything useful and exit.
 12. Exit cleanly when the useful rejuvenation work for this cycle is complete.
 
-Respect the same one-PRIMARY lease as heartbeat work.
+Respect the same one-PRIMARY lease as heartbeat and event work.
 
 Guardian Angel suggestions are advisory evidence, not authority and not automatic procedure/skill promotion.
 

@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.4.0
+
+Event-wake and backup-heartbeat release based on live Fred operating-cost/responsiveness discussion.
+
+### GitHub event wake
+
+- Added `runtime/arep-watch-github.sh`, a cheap deterministic watcher intended to poll the configured private agent repository every minute.
+- Added explicit `event` support to `runtime/arep-run.sh`; heartbeat, event, and rejuvenation continue to share one local PRIMARY `flock`.
+- Added `prompts/event.md` and `references/EVENT_WAKE.md`.
+- The watcher reacts to a deliberately narrow control surface: new Issues, reopened Issues, and new/updated Issue comments.
+- No-change watcher polls exit without launching the coding agent/model.
+- First watcher run initializes a local cursor to current time instead of replaying historical repository activity.
+- Cursor advances only after all required GitHub reads succeed and uses poll-start time as the next boundary to avoid losing changes created while polling.
+- Added Git-ignored pending event hints rather than a queue/database.
+- Event wakes carry a `Wake reason: github-change` routing hint and must reconstruct authoritative current GitHub reality before acting.
+- Event execution failure or PRIMARY lock contention preserves pending input for retry.
+- Successful event execution removes pending input only when the pending file did not change during the run, preventing newly arrived events from being discarded.
+- Multiple changes discovered in one poll are coalesced into one event wake.
+
+### Loop prevention and provenance
+
+- Reused V1.3 producer provenance as a conservative routing signal to suppress clearly self-produced PRIMARY comments from waking the same configured execution platform again.
+- Guardian, Worker, Reviewer, human/unlabelled, and unknown-origin comments remain wake candidates.
+- Kept provenance as routing evidence rather than authentication or authority; ambiguous origin prefers waking over silent discard.
+- Added explicit guidance not to post durable comments merely to acknowledge an event wake.
+
+### Backup heartbeat and scheduled work
+
+- Changed the generic active-agent normal heartbeat default/example from 15 minutes to **30 minutes**.
+- Kept the five-minute heartbeat cron poll so explicit fast/deadline mode can take effect promptly.
+- Added `.arep/primary.last` as the last successful productive PRIMARY completion from heartbeat or event wake.
+- Backup heartbeat due calculation now uses the latest successful productive PRIMARY completion, so a successful event wake postpones a redundant immediate heartbeat.
+- Retained `.arep/heartbeat.last` as the last successful heartbeat completion rather than overloading its meaning.
+- Added guidance that when PRIMARY knows authorized scheduled work needs another wake sooner than the normal 30-minute backup, it should explicitly enter fast mode or `DEADLINE_MODE=true` early enough to meet the window, then restore normal state when appropriate.
+- If work is due sooner than fast cadence plus scheduler polling can reliably support, PRIMARY should continue in the current authorized cycle when practical or use an already-authorized explicit scheduler mechanism.
+- Automatic parsing/inference of GitHub Issue deadlines remains deferred rather than being silently added to V1.4.
+
+### Runtime/config/bootstrap
+
+- Added config fields for `EVENT_ENABLED`, `GITHUB_WATCH_ENABLED`, watcher binary, watcher cursor/lock, pending event file, and productive PRIMARY timestamp.
+- Updated `cron.example` with a one-minute watcher plus existing five-minute heartbeat poll.
+- Updated bootstrap defaults for the event watcher and 30-minute normal backup heartbeat.
+- Added `event-<UTC timestamp>` run IDs with the same producer-provenance injection used by other PRIMARY cycles.
+- `paused` remains authoritative and suppresses heartbeat/event PRIMARY execution while preserving pending event state.
+
+### Tests
+
+- Expanded `runtime-test.sh` for event execution, event failure, event/heartbeat timing interaction, pending-state preservation, pause behavior, and shared PRIMARY lock contention.
+- Added `github-watch-test.sh` covering first-run cursor initialization, no-change cheap polling, external/Worker comment wake, self-PRIMARY suppression, new/reopened Issue wake, coalescing, API-failure cursor preservation, and pending retry after lock contention.
+
+### Deliberate exclusions
+
+- No webhook receiver.
+- No database/Redis queue.
+- No event bus or background worker pool.
+- No activity-scoring scheduler.
+- No automatic active/idle/dormant cadence states.
+- No day/night or quiet-hours logic.
+- No automatic deadline parsing.
+- No second PRIMARY or distributed lock.
+
 ## 1.3.0
 
 Additive provenance and reusable-skill release based on live multi-agent use around Fred.

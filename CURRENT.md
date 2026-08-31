@@ -1,128 +1,153 @@
 # Current A Rep version
 
-Current version, A Rep V1.3.0.
+Current version, **A Rep V1.4.0**.
 
-This repository uses a consolidated-current model. The current `a-rep/SKILL.md` and current supporting files define active behaviour. Historical changes belong in Git history or releases rather than additive patches that every agent must mentally compose.
+This repository uses a consolidated-current model. The current `a-rep/SKILL.md` and supporting files define active behaviour. Historical changes belong in Git history/changelog rather than additive patches every agent must mentally compose.
 
-## What V1.3 adds
+## Why V1.4
 
-V1.3 is an additive feature release based on live multi-agent use around Fred.
+Live Fred operation exposed a simple tension:
 
-Two concrete problems emerged:
+- a 30-minute heartbeat is useful as a recovery/scheduling safety net, but can be slow for fresh human/Guardian input;
+- polling itself is cheap, while unnecessary coding-agent/model executions are the meaningful cost;
+- reducing heartbeat frequency too aggressively can make scheduled work harder unless PRIMARY has another reliable way to wake promptly.
 
-1. Multiple execution/review surfaces can post through the same GitHub account, so native GitHub authorship no longer reliably identifies which actual agent/platform/role/instance produced a durable record.
-2. Live use showed agents naturally discovering reusable capabilities, including Hermes creating a reusable skill without being explicitly asked, while A Rep previously had only partial folder-level skill support rather than a first-class experimental-to-approved lifecycle.
+V1.4 addresses this with a small deterministic GitHub watcher rather than a new orchestration service.
 
-V1.3 addresses both with lightweight conventions rather than new orchestration infrastructure.
+## What V1.4 adds
 
-### Producer provenance
+### One-minute GitHub change watcher
 
-Material agent-authored comments, reviews, handoffs, and similar durable GitHub posts SHOULD begin with:
+`runtime/arep-watch-github.sh` is intended to run every minute.
 
-`[Agent | Platform | Role | Instance]`
+It watches a deliberately narrow control surface:
 
-Core Roles are:
+- new Issues;
+- reopened Issues;
+- new/updated Issue comments that are not clearly self-produced PRIMARY comments from the configured execution platform.
 
-- `PRIMARY`
-- `Worker`
-- `Guardian`
-- `Reviewer`
-- `Voice`
+If nothing relevant changed, the watcher exits without launching the coding agent.
 
-Agent-authored Git commits SHOULD carry:
+When relevant input changes, it records a concise Git-ignored pending hint and requests an explicit `event` PRIMARY wake.
 
-`Agent-Provenance: Agent/Platform/Role/Instance`
+### Explicit event cycle
 
-Launcher-run PRIMARY cycles also receive a UTC-stamped `Agent-Run` identifier correlated with the raw-log timestamp.
+`arep-run.sh` now supports:
 
-The launcher accepts optional non-secret `PROVENANCE_PLATFORM` and `PROVENANCE_INSTANCE` labels and otherwise uses lightweight fallbacks.
+- `heartbeat`
+- `event`
+- `rejuvenation`
 
-Provenance is deliberately a SHOULD convention: missing provenance does not invalidate otherwise useful historical/current evidence.
+All three use the same local PRIMARY `flock`. Event wake is not another PRIMARY.
 
-Provenance identifies the producer. It does **not** create authority.
+An event wake:
 
-### First-class skills
+- bypasses heartbeat due-time because concrete durable input changed;
+- respects `EVENT_ENABLED` and `paused` mode;
+- receives an `event-<UTC timestamp>` Agent-Run ID;
+- gets a concise `Wake reason: github-change` routing hint;
+- must inspect current GitHub reality before consequential action;
+- keeps pending input after failure or lock contention;
+- clears pending input only after successful execution when it did not change during that run.
 
-Experimental reusable capabilities now have a canonical home:
+### Minimal local watcher state
 
-`scratch/skills/<skill-name>/SKILL.md`
+Default Git-ignored state:
 
-Approved durable capabilities remain under:
+- `.arep/github-watch.cursor`
+- `.arep/github-watch.lock`
+- `.arep/github-event.pending`
+- `.arep/primary.last`
 
-`procedures/skills/<skill-name>/SKILL.md`
+There is no database, message queue, or event bus.
 
-PRIMARY may autonomously create, test, edit, and evolve experimental skills within current work authority.
+The first watcher run initializes its cursor to current time rather than replaying repository history.
 
-Promotion into `procedures/skills/` requires review and explicit human approval.
+### Self-loop suppression
 
-The normal lifecycle is:
+V1.3 provenance is reused as a routing hint.
 
-`live work -> learning -> experimental skill -> evidence -> promotion proposal -> review -> human approval -> approved skill`
+A clearly self-produced comment such as:
 
-Skills normally use directories so supporting scripts/templates/examples can grow with the capability.
+`[Fred | Codex | PRIMARY | VM-runtime]`
 
-A concise `trigger` metadata field supports cheap relevance routing before full skill content is loaded. Around 70 characters is a portability target, not a hard framework parser limit.
+is normally suppressed as an event trigger for that Codex PRIMARY.
 
-Git is the authoritative experimental history; semver is optional in scratch. Approved skills SHOULD carry an explicit version.
+Guardian, Worker, Reviewer, human/unlabelled, and unknown-origin comments remain wake candidates.
 
-Approved skills should normally depend only on approved/stable resources and must not silently depend on mutable experimental scratch material.
+This is conservative loop prevention, not authentication. When origin is ambiguous, prefer waking over silently discarding input.
 
-No manually synchronized INDEX, skill registry, package manager, marketplace, database, or skill-management API is added.
+### 30-minute active-agent backup heartbeat
 
-Skills describe capability/how. They never grant authority for the underlying action.
+V1.4 changes the generic active-agent normal heartbeat default/example from 15 minutes to **30 minutes**.
 
-## Runtime change
+Recommended starting schedule:
 
-The V1.3 launcher change is intentionally tiny.
+- watcher poll: every 1 minute;
+- heartbeat scheduler poll: every 5 minutes;
+- normal backup heartbeat: every 30 minutes;
+- fast/deadline heartbeat: every 5 minutes.
 
-For every executed heartbeat/rejuvenation, the launcher already creates a UTC timestamp for the raw log. V1.3 reuses that timestamp to generate:
+A successful heartbeat or event wake updates `.arep/primary.last`. Backup-heartbeat due calculation uses the latest successful productive PRIMARY completion, preventing an event run from being followed immediately by a redundant heartbeat.
 
-`Agent-Run: <cycle>-<timestamp>`
+### Scheduled work sooner than 30 minutes
 
-It injects the persistent Agent, Platform, Role `PRIMARY`, Instance, and run ID into the execution prompt.
+The 30-minute heartbeat is a recovery/coordination safety loop, not an exact business scheduler.
 
-Cadence, completion-anchored due timing, deadline behaviour, flock ownership, heartbeat success state, and one-PRIMARY architecture are unchanged.
+If PRIMARY sees an authorized scheduled obligation that requires another wake before the next normal backup, it should explicitly switch to `fast` mode or `DEADLINE_MODE=true` early enough to meet the window, then restore normal state after the time-sensitive period when appropriate.
 
-The runtime regression suite now includes provenance/run-ID prompt injection checks.
+If the required action is sooner than fast cadence plus scheduler polling can reliably support, PRIMARY should continue within the current authorized cycle when practical or use an already-authorized explicit scheduler mechanism.
 
-## V1.2.1 foundations retained
+V1.4 deliberately does **not** automatically parse Issue prose or infer deadlines. Public Issue #4 remains the separate evidence-gated automatic-deadline-awareness question.
 
-- heartbeat cadence anchored to successful completion;
-- scheduler polling granularity documented;
-- Issue 16 body = current runtime snapshot, comments = material transition history;
-- Issue 3 reserved for cross-cutting material events rather than routine runtime duplication;
-- hot context always read and reconciled when materially stale;
-- deep context loaded only after current task/recovery need is known and it materially helps.
+## What V1.4 deliberately does not add
 
-## V1.2 foundations retained
+No:
 
-- concise hot/deep strategic context layers;
-- strong fresh-session handoffs;
-- one persistent PRIMARY plus bounded temporary workers;
-- optional provider-agnostic Guardian Angel review;
-- explicit `DEADLINE_MODE` rather than automatic deadline inference.
+- webhook receiver;
+- Redis/database queue;
+- event bus;
+- background worker pool;
+- activity-based heartbeat scoring;
+- automatic 1h/2h/6h idle-state cadence;
+- day/night or quiet-hours logic;
+- automatic deadline parsing;
+- distributed lock;
+- second PRIMARY.
 
-## Deliberate exclusions / evidence-gated follow-up
+Those remain future options only if live evidence proves the small cron-based design insufficient.
 
-V1.3 still excludes persistent multi-PRIMARY coordination, distributed locking, a custom database, queues, workflow engines, custom memory servers, dashboards, a skill registry/marketplace, and other orchestration infrastructure.
+## Existing V1.3 foundations retained
 
-Public framework Issues continue to track evidence-gated follow-up including bounded timeout/stuck-cycle handling, scaffold migration tooling, optional execution-thread resumption, automatic deadline awareness, reusable live acceptance testing, first-class Guardian scheduling only if external scheduling proves insufficient, and the future recurring-responsibility/scheduled-subagent coordination vision.
+- producer provenance and `Agent-Run` correlation;
+- first-class experimental/approved skill lifecycle;
+- one PRIMARY plus bounded workers and advisory Guardians;
+- hot context always read, deep context only on demand;
+- completion-anchored heartbeat timing;
+- explicit `DEADLINE_MODE`;
+- Issue 16 body as current runtime snapshot and comments as transition history;
+- cold-start recovery as correctness baseline;
+- no hidden provider-session continuity requirement.
 
 ## Existing-agent migration
 
-V1.3 is additive and backward compatible.
+For an existing agent, V1.4 should be installed conservatively rather than by overwriting live work.
 
-Existing private agents do not need history rewritten.
+Recommended migration:
 
-For an existing agent such as Fred, the recommended hot patch is:
+1. sync the public A Rep checkout to V1.4;
+2. add V1.4 event/watcher config fields to the private agent config;
+3. retain agent-specific provenance labels and deliberate rejuvenation settings;
+4. set normal backup cadence to 30 minutes unless current evidence justifies another explicit setting;
+5. add the one-minute watcher cron while retaining the five-minute heartbeat poll;
+6. run launcher/watcher syntax checks plus both regression suites;
+7. initialize the watcher naturally; do not replay old repository history;
+8. verify a human/Guardian comment wakes PRIMARY and a clearly self-produced PRIMARY comment does not loop;
+9. reconcile Issue 16 with actual live state;
+10. do not manufacture new work merely to exercise the feature.
 
-- sync the public A Rep checkout to V1.3;
-- create `scratch/skills/README.md` / directory and update existing `procedures/skills/README.md` guidance;
-- add optional provenance labels to runtime config when a more useful Platform/Instance name is desired;
-- update agent/runtime README guidance as appropriate;
-- do not retroactively relabel old Issue comments or commits;
-- preserve all existing work/procedures/scratch state;
-- run launcher/bootstrap syntax checks and `a-rep/tests/runtime-test.sh`;
-- let future material comments/commits adopt provenance naturally.
+Existing private repositories and historical comments/commits do not need rewriting.
 
-Do not manufacture a first skill merely to test the folder. Let the first experimental skill emerge from real repeated work.
+## Live rollout status
+
+The public framework implements V1.4.0. Individual agent repositories/runtimes must still be upgraded and verified separately before claiming they run V1.4.

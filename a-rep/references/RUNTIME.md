@@ -1,198 +1,268 @@
-# A Rep V1.3 minimal runtime
+# A Rep V1.4 minimal runtime
 
 The runtime is intentionally small. It wakes a capable coding agent and gives it enough durable coordinates to recover. The agent, not the shell script, decides the work.
 
-V1.3 adds only lightweight producer/run provenance to the launcher; cadence, locking, completion anchoring, and one-PRIMARY architecture remain unchanged.
+V1.4 adds a deterministic GitHub event-wake path while preserving the existing one-PRIMARY architecture, local `flock`, explicit cadence controls, completion-anchored heartbeat timing, provenance, and cold-start recovery.
 
 ## Components
 
-- `runtime/arep-run.sh` runs either a heartbeat or rejuvenation PRIMARY cycle.
-- `runtime/arep.conf.example` is the small per-agent runtime configuration example.
-- `runtime/cron.example` shows one frequent wake-up schedule plus one nightly rejuvenation schedule.
-- `prompts/heartbeat.md` and `prompts/rejuvenation.md` are cold-start PRIMARY prompts.
+- `runtime/arep-run.sh` runs a `heartbeat`, `event`, or `rejuvenation` PRIMARY cycle.
+- `runtime/arep-watch-github.sh` cheaply polls the configured agent GitHub repository and requests an `event` wake when relevant input changes.
+- `runtime/arep.conf.example` is the per-agent runtime configuration example.
+- `runtime/cron.example` shows the one-minute GitHub watcher, five-minute heartbeat poll, and optional rejuvenation schedule.
+- `prompts/heartbeat.md`, `prompts/event.md`, and `prompts/rejuvenation.md` are cold-start PRIMARY prompts.
 - `prompts/guardian.md` is an optional external advisory-review prompt and is not run by the PRIMARY launcher.
 - `scripts/bootstrap-agent.sh` creates the private agent-repository skeleton and reserves Issues 1 through 20.
-- `scaffold/agent-repo/` is the canonical private-agent repository structure, including hot/deep context and experimental/approved skill locations.
-- `tests/runtime-test.sh` is the lightweight regression suite for the launcher.
+- `tests/runtime-test.sh` covers launcher behavior.
+- `tests/github-watch-test.sh` covers watcher behavior.
+
+See `EVENT_WAKE.md` for the detailed watcher contract.
 
 ## One PRIMARY lease
 
-Heartbeat and rejuvenation use the same `flock` lease. Keep the lease file at `.arep/primary.lock` in the private agent checkout.
+Heartbeat, event, and rejuvenation use the same `flock` lease at `.arep/primary.lock` by default.
 
 The file's presence is not proof that a lock is held. `flock` ownership belongs to the live process and is released when that process exits.
 
-This remains a local-machine V1 exclusion mechanism, not a distributed lock across machines. Do not deliberately schedule the same PRIMARY mutator on multiple machines in V1.
+This remains a local-machine V1 exclusion mechanism, not a distributed lock. Do not deliberately schedule the same PRIMARY mutator on multiple machines in V1.
 
-Guardian Angel does not take this lease because it is not PRIMARY and its default write surface is GitHub Issue comments rather than authoritative repository mutation.
+The GitHub watcher has its own cheap watcher lock so overlapping one-minute polls exit. It does not bypass the PRIMARY lease.
+
+Guardian Angel does not take the PRIMARY lease because it is advisory and normally writes only GitHub Issue comments.
+
+## Wake types
+
+A Rep V1.4 distinguishes three cycle types.
+
+### Heartbeat
+
+Periodic liveness/recovery/opportunity scan. It is the backup even when no GitHub event was detected.
+
+### Event
+
+Immediate PRIMARY wake requested by deterministic GitHub change detection. It bypasses heartbeat due-time but still respects `EVENT_ENABLED`, `paused` mode, and the PRIMARY lease.
+
+### Rejuvenation
+
+Optional lower-priority self-improvement cycle. Deadline mode suppresses rejuvenation.
 
 ## Heartbeat state and cadence
 
-Keep `.arep/heartbeat.last` as the last successful heartbeat timestamp.
+`.arep/heartbeat.last` remains the last successful heartbeat completion timestamp.
 
-Cron may wake the launcher more frequently than the desired agent cadence. The launcher checks whether the heartbeat is due and exits cheaply when it is not.
+V1.4 adds `.arep/primary.last`, the last successful productive PRIMARY completion from either heartbeat or event wake.
 
-Supported modes are `fast`, `normal`, `slow`, and `paused`.
+Heartbeat due calculation uses the most recent of those two timestamps. This prevents a successful event wake from being followed immediately by a redundant backup heartbeat.
+
+Cron may wake the heartbeat launcher more frequently than the desired model cadence. The launcher checks whether heartbeat is due and exits cheaply when it is not.
+
+Supported heartbeat modes remain `fast`, `normal`, `slow`, and `paused`.
 
 `DEADLINE_MODE=true` uses the fast interval unless heartbeat mode is explicitly paused. It also suppresses rejuvenation.
 
-The cadence clock is anchored to **successful heartbeat completion**, not heartbeat start. `arep-run.sh` writes `.arep/heartbeat.last` only after the execution driver exits successfully. The next heartbeat can start on the first scheduler poll at or after:
+The cadence clock remains anchored to **successful productive PRIMARY completion**, not heartbeat start. The next backup heartbeat can start on the first scheduler poll at or after:
 
-`previous successful completion + selected heartbeat interval`
+`latest successful heartbeat/event completion + selected heartbeat interval`
 
 Consequences:
 
 - `fast=5` does not guarantee exactly five minutes between cycle start timestamps;
-- start-to-start spacing includes the previous cycle's execution time;
 - scheduler polling can add up to roughly one polling interval after the due time;
-- a failed execution does not advance `.arep/heartbeat.last`.
+- a failed heartbeat/event does not advance productive success state;
+- a successful event wake postpones the next backup heartbeat.
 
-When forecasting a next wake in a handoff, describe a due window relative to successful completion and scheduler granularity rather than promising an exact start timestamp before the current cycle has finished.
+For active agents, V1.4 changes the recommended/default normal backup interval to **30 minutes**. The example heartbeat cron still polls every five minutes so fast/deadline mode can take effect.
 
-The shell launcher does not inspect GitHub Issue due dates and does not infer that a deadline is approaching. `DEADLINE_MODE` is explicit configured state. PRIMARY may change it when current evidence warrants.
+`slow` remains an explicit operator/PRIMARY-selected mode. `paused` suppresses PRIMARY heartbeat and event execution.
 
-Temporary workers and Guardian may request cadence changes through Issue 16 but do not own runtime configuration.
+## Scheduled work
 
-The cron polling interval must be no slower than the configured fast interval if that fast cadence is expected to be achievable.
+The 30-minute backup heartbeat is a recovery loop, not an exact business-task scheduler.
+
+If PRIMARY observes an authorized scheduled obligation that requires another wake before the next normal backup, it should explicitly use `HEARTBEAT_MODE=fast` or `DEADLINE_MODE=true` early enough to meet the window, then restore normal state after the time-sensitive period when appropriate.
+
+If the required action is sooner than the configured fast interval plus scheduler polling can reliably provide, PRIMARY should not merely exit and hope for a later wake. Continue within the current authorized cycle when practical or use an already-authorized explicit scheduler mechanism.
+
+The launcher does not parse Issue prose or automatically infer deadlines. Automatic deadline awareness remains a separate evidence-gated feature.
+
+## GitHub watcher
+
+The intended V1.4 schedule is one watcher invocation per minute:
+
+```text
+* * * * * .../arep-watch-github.sh .../config/arep.env
+```
+
+The watcher uses `gh api` and currently reacts to a deliberately narrow GitHub surface:
+
+- new Issues;
+- reopened Issues;
+- new/updated Issue comments not clearly attributable to the configured platform's own PRIMARY provenance.
+
+A newly created sub-Issue is naturally detected because it is a new Issue. Relationship-only sub-Issue metadata is not separately modeled.
+
+The watcher does not launch the execution model if nothing relevant changed.
+
+Default Git-ignored watcher files:
+
+- `.arep/github-watch.cursor`
+- `.arep/github-watch.lock`
+- `.arep/github-event.pending`
+
+On first run the watcher initializes its cursor to current time instead of replaying all history. Existing state is still recoverable by the backup heartbeat.
+
+The cursor advances only after all GitHub reads succeed. The watcher writes the poll **start** timestamp as the new cursor so events created while the API calls are in flight are not silently skipped.
+
+The current implementation intentionally uses a single page of up to 100 results per watched endpoint per poll. For a private single-agent control repo this is expected to be ample. Do not add pagination/queue machinery unless real event volume proves it necessary.
+
+## Event pending state
+
+When the watcher finds relevant changes, it appends concise hints to `.arep/github-event.pending`, keeping only a small recent tail, then calls:
+
+```text
+arep-run.sh event <config>
+```
+
+The hint is not authoritative work state. The event prompt instructs PRIMARY to inspect current GitHub reality before acting.
+
+If the PRIMARY lease is already held, `arep-run.sh event` exits without consuming pending state; the next watcher poll retries.
+
+If event execution fails, pending state remains.
+
+If event execution succeeds, the launcher removes the pending file only when its checksum is unchanged from the start of the run. If new events arrived while PRIMARY was running, the file remains for a later retry. This prefers an occasional redundant wake over lost input.
+
+## Self-loop suppression
+
+A PRIMARY may itself post durable comments. Waking again on every self-comment can create an execution loop.
+
+The watcher therefore treats a first-line provenance marker matching the configured execution Platform and Role `PRIMARY` as a self-produced routing signal and suppresses that comment as a wake trigger.
+
+Guardian, Worker, Reviewer, Voice, human/unlabelled, and unknown-origin comments remain wake candidates.
+
+This is a routing heuristic, not authentication. Provenance still does not create authority. When origin is ambiguous, prefer waking over silently discarding input.
+
+PRIMARY should avoid posting comments merely to acknowledge an event wake.
 
 ## PRIMARY producer provenance and run IDs
 
-For each executed heartbeat or rejuvenation cycle, the launcher generates:
+Every executed heartbeat, event, or rejuvenation receives:
 
 `<cycle>-<UTC timestamp>`
 
-For example:
+Examples:
 
-`heartbeat-20260831T170001Z`
+- `heartbeat-20260831T170001Z`
+- `event-20260831T170101Z`
+- `rejuvenation-20260831T030000Z`
 
-The same UTC stamp is already used for the raw-log filename, so this adds correlation without a run database or registry.
-
-The launcher injects the following into the execution prompt:
-
-- persistent Agent ID;
-- execution Platform;
-- provenance Role `PRIMARY`;
-- Instance;
-- `Agent-Run`.
+The launcher injects persistent Agent ID, Platform, Role `PRIMARY`, Instance, and `Agent-Run` into the execution prompt.
 
 Optional non-secret config fields:
 
-- `PROVENANCE_PLATFORM` — human-readable execution platform label. Defaults to `EXECUTION_DRIVER` when empty/unset.
-- `PROVENANCE_INSTANCE` — useful concrete runtime instance label. Defaults to `runtime-heartbeat` or `runtime-rejuvenation` when empty/unset.
+- `PROVENANCE_PLATFORM`
+- `PROVENANCE_INSTANCE`
 
-For a live Fred VM this might be:
+If one config drives several cycle types, a cycle-neutral instance label such as `VM-runtime` is often more accurate than `VM-heartbeat`.
 
-```text
-PROVENANCE_PLATFORM="Codex"
-PROVENANCE_INSTANCE="VM-heartbeat"
-```
-
-If one config drives both heartbeat and rejuvenation, a generic host label such as `VM-runtime` may be more accurate; the `Agent-Run` and cycle still distinguish invocations.
-
-PRIMARY should reuse the exact supplied provenance tuple and run ID on material durable comments, handoffs, sanitized admin logs, and agent-authored commit trailers when practical.
-
-This metadata is provenance only. It does not create authority or make the execution successful.
-
-See `PROVENANCE.md`.
+PRIMARY should reuse the supplied provenance tuple and run ID on material durable comments, handoffs, sanitized admin logs, and agent-authored commit trailers when practical.
 
 ## Runtime record: Issue 16
 
-Issue 16 is the canonical human-readable runtime/heartbeat record for an agent repository.
+Issue 16 is the canonical human-readable runtime/heartbeat/event-wake record for an agent repository.
 
 Prefer:
 
-- **Issue 16 body:** concise current runtime snapshot, including current mode, deadline state, important intervals, scheduler state, and other host/runtime facts worth seeing at a glance.
+- **Issue 16 body:** concise current runtime snapshot, including watcher state, event state, current heartbeat mode, deadline state, important intervals, scheduler state, and host/runtime facts worth seeing at a glance.
 - **Issue 16 comments:** material runtime/cadence requests, transitions, rationale, and verification history.
 
-The actual live/tracked runtime configuration and direct host evidence remain authoritative when Issue prose is stale or contradictory. After PRIMARY changes runtime configuration, it should verify the resulting state and reconcile the Issue 16 body so the current snapshot does not remain stale.
+Live/tracked runtime configuration and direct host evidence remain authoritative when Issue prose is stale or contradictory.
 
-Material agent-authored Issue 16 comments SHOULD carry producer provenance and `Agent-Run` when available.
-
-Issue 3 is not a second routine runtime log. Mirror something there only when it is also a material cross-cutting action, failure, recovery, incident, or major state transition worth preserving beyond Issue 16.
+Issue 3 is not a second routine runtime log. Mirror only material cross-cutting actions, failures, recoveries, incidents, or major transitions worth preserving beyond Issue 16.
 
 ## Strategic context loading
 
-Every heartbeat reads `config/agent-context.md` before selecting work.
+Every heartbeat and event wake reads `config/agent-context.md` before selecting work.
 
-`config/agent-context-deep.md` is intentionally on-demand and should not be part of automatic baseline recovery. First recover hot context and current work/system state. Load deep context only when the resulting task or recovery need requires background absent from hot context, or when the hot context specifically points to deep material that materially affects the selected action.
+`config/agent-context-deep.md` remains on-demand. First recover hot context and current work/system state; load deep context only when the resulting task or recovery need materially requires it.
 
-Having no active work is not, by itself, a reason to load deep context. A no-work heartbeat should normally remain hot-context-only unless diagnosing an ambiguity, incident, or strategic question that genuinely requires deeper background.
-
-The same principle applies to Guardian review and, where useful, rejuvenation: deeper context should earn its token/context cost by materially improving the current review or improvement task.
+No active work by itself is not a reason to load deep context.
 
 ## Execution engines
 
-V1 directly supports two simple non-interactive CLI shapes for PRIMARY runtime.
+V1 directly supports two simple non-interactive CLI shapes:
 
-- Codex, `codex exec PROMPT`.
-- OpenCode, `opencode run PROMPT`.
+- Codex: `codex exec PROMPT`
+- OpenCode: `opencode run PROMPT`
 
-Set `EXECUTION_DRIVER`, `EXECUTION_BIN`, and optionally `EXECUTION_MODEL` in the private agent config. The persistent agent identity is not tied to either execution engine.
+Set `EXECUTION_DRIVER`, `EXECUTION_BIN`, and optionally `EXECUTION_MODEL` in the private agent config.
 
-Heartbeat PRIMARY may use bounded subagents/workers if its execution surface provides them. That delegation remains model/tool behavior rather than new A Rep orchestration infrastructure.
+The persistent agent identity is not tied to either execution engine.
 
-Workers should be given appropriate producer provenance when they are expected to create durable material. They do not inherit PRIMARY Role merely because PRIMARY launched them.
+## Guardian scheduling
 
-## Guardian Angel scheduling
+Guardian remains provider-agnostic and externally scheduled through ChatGPT tasks, Hermes, Claude scheduling, or another capable environment.
 
-Guardian is provider-agnostic and externally scheduled.
+Guardian normally posts only Issue comments and does not mutate PRIMARY runtime state.
 
-ChatGPT tasks, Hermes scheduling, Claude scheduling, or another capable execution environment may periodically invoke `prompts/guardian.md` with access to the public A Rep repository and the private agent repository.
+The V1.4 GitHub watcher means a material Guardian comment can wake PRIMARY promptly without Guardian becoming PRIMARY.
 
-An hourly cadence is a reasonable starting point for some agents, but A Rep does not prescribe one. Guardian should remain silent when nothing material warrants a comment.
-
-Guardian normally posts only Issue comments and does not mutate PRIMARY runtime state. Guardian comments SHOULD carry Guardian producer provenance. See `GUARDIAN.md`.
-
-## Two logging levels
+## Logging
 
 Raw execution output and machine-local runtime artifacts live under `.arep/`, which is Git ignored.
 
 The default raw output directory is `.arep/raw-logs/`.
 
-Raw logs may contain large command output, model text, or sensitive context and should not be committed merely for observability.
+Git-visible operational history belongs under `admin/logs/`. Record executed PRIMARY cycles when useful, not one-minute watcher polls or heartbeat polls that exit because no model wake was due.
 
-Git-visible operational history belongs under the tracked private-agent path `admin/logs/`. These entries must be concise and sanitized. Prefer a daily Markdown file and record only executed PRIMARY cycles, not scheduler polls that exit because a heartbeat is not due.
-
-V1.3 executed-cycle entries SHOULD include the producer header and launcher-supplied `Agent-Run` when practical so the Git-visible record can be correlated to the raw log and agent-authored commits.
-
-Issue 16 is canonical for routine runtime/cadence transitions. Issue 3 remains the cross-cutting durable trail for material actions, failures, recoveries, incidents, and major state transitions that matter beyond a dedicated work/runtime record.
-
-Never intentionally print or persist secrets in either log tier.
-
-## Canonical private-agent scaffold
-
-`scaffold/agent-repo/` defines the standard top-level zones:
-
-- `admin/`, durable operational documentation and sanitized logs.
-- `config/`, non-secret runtime configuration plus hot/deep strategic context.
-- `scratch/`, exploratory working material including experimental `scratch/skills/`.
-- `procedures/`, reviewed trusted ways of working including approved `procedures/skills/`.
-- `work/`, actual goal artifacts.
-- `.arep/`, Git-ignored local runtime state and raw logs.
-
-Prefer these top-level zones over inventing new ones. Project-specific organization should normally happen inside `work/` or `scratch/`.
+Never intentionally print or persist secrets in either log tier or event hints.
 
 ## Bootstrap
 
-Install or clone the public A Rep repository at a stable local path. Point `A_REP_SKILL_PATH` in the private agent configuration to its current `a-rep/SKILL.md`.
+`bootstrap-agent.sh` now writes the V1.4 event-wake configuration, 30-minute normal backup heartbeat, and local watcher/productive-success paths into a new agent repo config.
 
-Run `sh a-rep/scripts/bootstrap-agent.sh` once against a newly created, empty private agent repository before creating normal work Issues. Bootstrap copies the canonical scaffold, writes the agent-specific runtime config, root README, and hot-context identity/role, then creates Issues 1 through 20 sequentially.
+The runtime does not create/manage credentials, install coding agents, authenticate GitHub, or create the private GitHub repository itself.
 
-The V1.3 bootstrap includes empty optional provenance config fields plus the experimental/approved skill scaffold. Empty provenance fields preserve launcher defaults.
-
-The repository must have no commits and an unused Issue/PR number space so the reserved Issues occupy numbers 1 through 20.
-
-The runtime does not create or manage credentials, install coding agents, authenticate GitHub, or create the private GitHub repository itself.
+The GitHub watcher requires an authenticated `gh` CLI available to the host.
 
 ## Regression tests
 
-Run `sh a-rep/tests/runtime-test.sh`.
+Run:
 
-The suite uses a fake execution binary, not a live paid model call. It covers cadence modes, explicit deadline behaviour, missing configuration, execution failure, success timestamp behaviour, due-skip, PRIMARY lock contention, rejuvenation suppression, and V1.3 run/provenance prompt injection.
+```text
+sh a-rep/tests/runtime-test.sh
+sh a-rep/tests/github-watch-test.sh
+```
 
-## Deferred runtime optimizations
+The tests use fake execution/GitHub binaries and do not call a live paid model.
 
-V1.3 does not add provider-session/thread resumption as a continuity dependency. It may be explored later as a token/latency optimization, but durable cold-start recovery remains authoritative.
+Coverage includes:
 
-It also does not add a process timeout merely because cron polls frequently. The lease already prevents overlap. Add bounded timeout or stuck-cycle detection only when real operating evidence shows hanging or unexpectedly long executions.
+- normal/fast/slow/paused cadence;
+- explicit deadline behavior;
+- success/failure timestamp semantics;
+- heartbeat/event shared PRIMARY lock;
+- event prompt/run-ID injection;
+- pending event preservation/retry;
+- event-success backup-heartbeat postponement;
+- first-run cursor initialization;
+- no-change cheap polling;
+- external/Worker comment wake;
+- self-PRIMARY comment suppression;
+- new/reopened Issue wake;
+- coalescing;
+- API-failure cursor preservation.
 
-V1.3 does not add a skill registry, dependency manager, or Guardian runtime service. Provenance and skill lifecycle use ordinary prompt metadata, files, Git, and Issues.
+## Deferred optimizations
+
+V1.4 deliberately does not add:
+
+- webhook delivery;
+- activity-based backup cadence;
+- day/night or quiet-hour scheduling;
+- automatic deadline parsing;
+- provider-thread continuity as correctness state;
+- database/queue/event-bus infrastructure;
+- a background worker pool;
+- distributed locking.
+
+Add any of these only after live use demonstrates a concrete problem that the current small design cannot solve.
