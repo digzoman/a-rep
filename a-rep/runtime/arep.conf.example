@@ -1,4 +1,4 @@
-# A Rep V1.3 agent runtime config. No secrets.
+# A Rep V1.4 agent runtime config. No secrets.
 AGENT_ID="fred"
 AGENT_ROLE="Founder"
 AGENT_REPO="digzoman/fred"
@@ -13,17 +13,25 @@ EXECUTION_BIN="codex"
 EXECUTION_MODEL=""
 
 # Optional producer-provenance labels for launcher-run PRIMARY cycles.
-# Platform defaults to EXECUTION_DRIVER; Instance defaults to runtime-heartbeat/runtime-rejuvenation.
+# Platform defaults to EXECUTION_DRIVER; Instance defaults to runtime-<cycle>.
 # If this one config drives several cycle types, use a cycle-neutral host label.
 PROVENANCE_PLATFORM="Codex"
 PROVENANCE_INSTANCE="VM-runtime"
 
+# Backup heartbeat. Normal defaults to 30 minutes for active agents.
+# Fast/deadline mode exists for scheduled work that needs another wake sooner.
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="normal" # fast | normal | slow | paused
 HEARTBEAT_FAST_MINUTES="5"
-HEARTBEAT_NORMAL_MINUTES="15"
+HEARTBEAT_NORMAL_MINUTES="30"
 HEARTBEAT_SLOW_MINUTES="60"
 DEADLINE_MODE="false"
+
+# Deterministic GitHub event wake. The watcher itself is cheap and should be
+# scheduled every minute; it only launches PRIMARY when meaningful input changed.
+EVENT_ENABLED="true"
+GITHUB_WATCH_ENABLED="true"
+GITHUB_WATCH_BIN="gh"
 
 REJUVENATION_ENABLED="true"
 
@@ -31,3 +39,7 @@ RUNTIME_DIR=".arep"
 LOG_DIR=".arep/raw-logs"
 LOCK_FILE=".arep/primary.lock"
 HEARTBEAT_LAST_FILE=".arep/heartbeat.last"
+PRIMARY_LAST_FILE=".arep/primary.last"
+EVENT_PENDING_FILE=".arep/github-event.pending"
+GITHUB_WATCH_CURSOR_FILE=".arep/github-watch.cursor"
+GITHUB_WATCH_LOCK_FILE=".arep/github-watch.lock"

@@ -1,11 +1,15 @@
-# A Rep V1.3 cron example.
+# A Rep V1.4 cron example.
 # Replace paths with the installed A Rep checkout and private agent checkout.
-# The five-minute heartbeat line is a poll. arep-run.sh applies fast/normal/slow/paused cadence from config.
-# Polls that find heartbeat not due exit cheaply and do not create Git-visible operational log entries.
-# Executed PRIMARY cycles receive producer provenance coordinates and an Agent-Run ID in their prompt.
+#
+# GitHub watcher: poll every minute. It is deterministic and cheap; it launches
+# PRIMARY only when it sees a new/reopened Issue or a non-self Issue comment.
+* * * * * cd /srv/fred && /bin/sh /opt/a-rep/a-rep/runtime/arep-watch-github.sh /srv/fred/config/arep.env
 
+# Backup heartbeat poll. The launcher applies fast/normal/slow/paused cadence
+# from config. The recommended normal backup interval for an active agent is
+# 30 minutes. Five-minute polling lets explicit fast/deadline mode take effect.
 */5 * * * * cd /srv/fred && /bin/sh /opt/a-rep/a-rep/runtime/arep-run.sh heartbeat /srv/fred/config/arep.env
 
-# Optional rejuvenation example. Enable only after enough real execution history exists to justify self-improvement cycles.
+# Optional rejuvenation example. Enable only after enough real execution history exists.
 # The launcher skips rejuvenation when disabled or when DEADLINE_MODE=true.
 0 3 * * * cd /srv/fred && /bin/sh /opt/a-rep/a-rep/runtime/arep-run.sh rejuvenation /srv/fred/config/arep.env

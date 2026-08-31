@@ -17,17 +17,19 @@ CONF="${2:-./config/arep.env}"
 : "${EXECUTION_BIN:=$EXECUTION_DRIVER}"
 : "${HEARTBEAT_MODE:=normal}"
 : "${HEARTBEAT_FAST_MINUTES:=5}"
-: "${HEARTBEAT_NORMAL_MINUTES:=15}"
+: "${HEARTBEAT_NORMAL_MINUTES:=30}"
 : "${HEARTBEAT_SLOW_MINUTES:=60}"
 : "${RUNTIME_DIR:=.arep}"
 : "${LOG_DIR:=$RUNTIME_DIR/raw-logs}"
 : "${LOCK_FILE:=$RUNTIME_DIR/primary.lock}"
 : "${HEARTBEAT_LAST_FILE:=$RUNTIME_DIR/heartbeat.last}"
+: "${PRIMARY_LAST_FILE:=$RUNTIME_DIR/primary.last}"
+: "${EVENT_PENDING_FILE:=$RUNTIME_DIR/github-event.pending}"
 
 cd "$AGENT_REPO_DIR"
 umask 077
 mkdir -p "$RUNTIME_DIR" "$LOG_DIR"
-mkdir -p "$(dirname "$LOCK_FILE")" "$(dirname "$HEARTBEAT_LAST_FILE")"
+mkdir -p "$(dirname "$LOCK_FILE")" "$(dirname "$HEARTBEAT_LAST_FILE")" "$(dirname "$PRIMARY_LAST_FILE")" "$(dirname "$EVENT_PENDING_FILE")"
 
 exec 9>"$LOCK_FILE"
 flock -n 9 || exit 0
@@ -49,14 +51,30 @@ interval_minutes() {
   esac
 }
 
+read_numeric_file() {
+  file="$1"
+  value=0
+  [ -f "$file" ] && value="$(cat "$file" 2>/dev/null || printf '0')"
+  case "$value" in *[!0-9]*|'') value=0 ;; esac
+  printf '%s\n' "$value"
+}
+
+last_productive_primary_success() {
+  heartbeat_last="$(read_numeric_file "$HEARTBEAT_LAST_FILE")"
+  primary_last="$(read_numeric_file "$PRIMARY_LAST_FILE")"
+  if [ "$primary_last" -gt "$heartbeat_last" ]; then
+    printf '%s\n' "$primary_last"
+  else
+    printf '%s\n' "$heartbeat_last"
+  fi
+}
+
 heartbeat_due() {
   [ "${HEARTBEAT_ENABLED:-true}" = "true" ] || return 1
   mins="$(interval_minutes)"
   [ "$mins" -gt 0 ] || return 1
   now="$(date +%s)"
-  last=0
-  [ -f "$HEARTBEAT_LAST_FILE" ] && last="$(cat "$HEARTBEAT_LAST_FILE" 2>/dev/null || printf '0')"
-  case "$last" in *[!0-9]*|'') last=0 ;; esac
+  last="$(last_productive_primary_success)"
   [ "$now" -ge $((last + mins * 60)) ]
 }
 
@@ -65,13 +83,19 @@ case "$CYCLE" in
     heartbeat_due || exit 0
     PROMPT_KIND="heartbeat"
     ;;
+  event)
+    [ "${EVENT_ENABLED:-true}" = "true" ] || exit 0
+    [ "$HEARTBEAT_MODE" != "paused" ] || exit 0
+    [ -s "$EVENT_PENDING_FILE" ] || exit 0
+    PROMPT_KIND="event"
+    ;;
   rejuvenation)
     [ "${REJUVENATION_ENABLED:-true}" = "true" ] || exit 0
     [ "${DEADLINE_MODE:-false}" != "true" ] || exit 0
     PROMPT_KIND="rejuvenation"
     ;;
   *)
-    echo "Usage: $0 heartbeat|rejuvenation [config]" >&2
+    echo "Usage: $0 heartbeat|event|rejuvenation [config]" >&2
     exit 2
     ;;
 esac
@@ -83,6 +107,13 @@ PROVENANCE_INSTANCE_VALUE="${PROVENANCE_INSTANCE:-runtime-$PROMPT_KIND}"
 LOG="$LOG_DIR/${PROMPT_KIND}-${STAMP}.log"
 PROMPT_FILE="$(dirname "$A_REP_SKILL_PATH")/prompts/${PROMPT_KIND}.md"
 [ -f "$PROMPT_FILE" ] || { echo "Missing prompt: $PROMPT_FILE" >&2; exit 2; }
+
+EVENT_HINT=""
+EVENT_PENDING_CKSUM=""
+if [ "$CYCLE" = "event" ]; then
+  EVENT_HINT="$(cat "$EVENT_PENDING_FILE" 2>/dev/null || true)"
+  EVENT_PENDING_CKSUM="$(cksum "$EVENT_PENDING_FILE" 2>/dev/null || true)"
+fi
 
 PROMPT="$(cat "$PROMPT_FILE")
 
@@ -106,6 +137,16 @@ Instance: $PROVENANCE_INSTANCE_VALUE
 Agent-Run: $RUN_ID
 Use this exact provenance tuple and Agent-Run on material durable comments, handoffs, sanitized execution records, and agent-authored commits when practical, following references/PROVENANCE.md.
 "
+
+if [ "$CYCLE" = "event" ]; then
+  PROMPT="$PROMPT
+
+Deterministic event-wake hint. This is a routing hint, not authoritative work state.
+Wake reason: github-change
+Observed changes:
+$EVENT_HINT
+Inspect current GitHub reality before acting. Do not assume every observed change requires action."
+fi
 
 run_agent() {
   case "$EXECUTION_DRIVER" in
@@ -132,8 +173,18 @@ run_agent() {
 
 if run_agent >"$LOG" 2>&1; then
   cat "$LOG"
+  now_success="$(date +%s)"
   if [ "$CYCLE" = "heartbeat" ]; then
-    date +%s >"$HEARTBEAT_LAST_FILE"
+    printf '%s\n' "$now_success" >"$HEARTBEAT_LAST_FILE"
+  fi
+  if [ "$CYCLE" = "heartbeat" ] || [ "$CYCLE" = "event" ]; then
+    printf '%s\n' "$now_success" >"$PRIMARY_LAST_FILE"
+  fi
+  if [ "$CYCLE" = "event" ]; then
+    current_cksum="$(cksum "$EVENT_PENDING_FILE" 2>/dev/null || true)"
+    if [ -n "$EVENT_PENDING_CKSUM" ] && [ "$current_cksum" = "$EVENT_PENDING_CKSUM" ]; then
+      rm -f "$EVENT_PENDING_FILE"
+    fi
   fi
   exit 0
 else

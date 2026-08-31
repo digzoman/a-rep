@@ -58,14 +58,21 @@ PROVENANCE_INSTANCE=""
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="normal"
 HEARTBEAT_FAST_MINUTES="5"
-HEARTBEAT_NORMAL_MINUTES="15"
+HEARTBEAT_NORMAL_MINUTES="30"
 HEARTBEAT_SLOW_MINUTES="60"
 DEADLINE_MODE="false"
+EVENT_ENABLED="true"
+GITHUB_WATCH_ENABLED="true"
+GITHUB_WATCH_BIN="gh"
 REJUVENATION_ENABLED="true"
 RUNTIME_DIR=".arep"
 LOG_DIR=".arep/raw-logs"
 LOCK_FILE=".arep/primary.lock"
 HEARTBEAT_LAST_FILE=".arep/heartbeat.last"
+PRIMARY_LAST_FILE=".arep/primary.last"
+EVENT_PENDING_FILE=".arep/github-event.pending"
+GITHUB_WATCH_CURSOR_FILE=".arep/github-watch.cursor"
+GITHUB_WATCH_LOCK_FILE=".arep/github-watch.lock"
 EOFCONF
 
 cat > config/agent-context.md <<EOFCONTEXT
@@ -126,6 +133,8 @@ PRIMARY always reads `config/agent-context.md`. It reads `config/agent-context-d
 Material agent-authored GitHub comments, reviews, and handoffs should use A Rep producer provenance: `[Agent | Platform | Role | Instance]`. Launcher-run PRIMARY cycles receive an `Agent-Run` ID. Provenance identifies the producer; it does not create authority. See the public A Rep `references/PROVENANCE.md`.
 
 Reusable experimental capabilities may be created and evolved under `scratch/skills/<skill-name>/SKILL.md`. Promotion into `procedures/skills/` requires review and explicit human approval. Skills describe capability, not permission. See `references/SKILLS.md` in the public A Rep repo.
+
+A Rep V1.4 can poll GitHub every minute for new/reopened Issues and non-self Issue comments, waking PRIMARY through the same lease only when useful input changed. Keep a normal 30-minute backup heartbeat for liveness/recovery. If known scheduled work needs another wake sooner, PRIMARY should explicitly use fast/deadline mode rather than assuming the watcher understands business deadlines.
 
 Durable operating state is also maintained through GitHub Issues. Normal real work starts at Issue 21.
 EOFREADME
