@@ -10,6 +10,7 @@ Small hardening release based on Fred's first real Issue 21 live acceptance test
 - Clarified that live/tracked runtime configuration and direct host evidence remain authoritative if Issue prose is stale.
 - Clarified that routine runtime/cadence transitions belong in Issue 16; Issue 3 is for cross-cutting actions, failures, recoveries, incidents, and major transitions rather than duplicate runtime logging.
 - Tightened `agent-context-deep.md` loading so it is task/recovery-gated after baseline hot-context/system/work recovery; no active work by itself is not a reason to load deep context.
+- Added an explicit heartbeat rule to reconcile stale **cross-cutting current facts** in hot context after material changes, without turning hot context into a chronological task log.
 - Kept launcher code and runtime architecture unchanged.
 
 ## 1.2.0
