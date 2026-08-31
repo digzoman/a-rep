@@ -2,11 +2,11 @@
 name: a-rep
 description: Lightweight repeating agent framework for persistent, nondeterministic, goal-seeking work across fresh coding-agent sessions. Use when an agent must recover durable state, prioritize real-world goals, act through available tools, verify results, record progress, and improve its own procedures over time.
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
   framework: "A Rep"
 ---
 
-# A Rep V1.2
+# A Rep V1.2.1
 
 ## Purpose
 
@@ -68,11 +68,11 @@ Failure to look something up is not evidence that it does not exist. Memory fail
 
 ## Strategic context layers
 
-V1.2 standardizes two durable context files.
+A Rep standardizes two durable context files.
 
 `config/agent-context.md` is hot context. PRIMARY reads it on every heartbeat and Guardian reads it on every review cycle. Keep it concise and current: a short identity/role summary, mission, cross-cutting priorities, decision principles, and only the context worth loading every wake.
 
-`config/agent-context-deep.md` is cold context. Load it on demand when hot context points to it, active work is unclear, or richer organizational history, strategy, stakeholders, constraints, terminology, or background materially improves the task.
+`config/agent-context-deep.md` is cold context. Do not load it automatically as part of baseline cold-start recovery. Load it only after current work/recovery needs are known and the hot context points to it or information absent from hot context would materially affect the selected action. Having no active work, by itself, is not a reason to read deep context.
 
 Context files support interpretation. They do not supersede trusted human instruction, Issue 2 Identity and Charter, Issue 4 Human Decisions and Authority, approved procedures, runtime configuration, or direct current evidence.
 
@@ -117,7 +117,7 @@ Continue independent eligible work when one item is waiting on the human.
 
 ## Canonical agent repository zones
 
-V1.2 defines a canonical private-agent scaffold under `scaffold/agent-repo/`. Prefer these top-level zones over inventing new ones without a real structural need.
+A Rep defines a canonical private-agent scaffold under `scaffold/agent-repo/`. Prefer these top-level zones over inventing new ones without a real structural need.
 
 `admin/` is durable operational information about the agent. `admin/logs/` holds concise sanitized Git-visible operational logs. `admin/runtime/` holds machine/runtime installation and recovery documentation.
 
@@ -135,7 +135,7 @@ Project-specific structure should normally be created inside `work/` or `scratch
 
 ## Guardian Angel
 
-V1.2 defines an optional external Guardian Angel review loop.
+A Rep defines an optional external Guardian Angel review loop.
 
 Guardian may run through ChatGPT, Claude, another capable model, or another execution surface on an independent schedule. It reads the same durable context and current work state and provides critical review, suggestions, risk flags, improvement ideas, and offers of bounded help.
 
@@ -177,11 +177,15 @@ A fresh invocation must carry enough durable coordinates to locate this skill an
 
 The V1 launcher supports `fast`, `normal`, `slow`, and `paused` heartbeat modes. A frequent cron poll lets PRIMARY change cadence through configuration without rewriting cron. `DEADLINE_MODE=true` accelerates heartbeat to the fast interval unless explicitly paused.
 
-The launcher does not automatically infer approaching GitHub Issue deadlines in V1.2. Deadline mode is explicit runtime state.
+Heartbeat interval timing is anchored to the previous **successful heartbeat completion**, because `.arep/heartbeat.last` is written only after the execution driver exits successfully. The next execution starts on the first scheduler poll at or after `successful completion + selected interval`. Therefore start-to-start spacing can include the previous cycle's execution duration plus up to roughly one scheduler-poll interval. Do not treat `fast=5` as a promise of exactly five minutes between cycle start timestamps.
+
+The launcher does not automatically infer approaching GitHub Issue deadlines. Deadline mode is explicit runtime state.
 
 Only PRIMARY owns runtime configuration. Temporary workers and Guardian may request changes through Issue 16 but do not independently race to alter runtime state.
 
-V1.2 recommends `.arep/primary.lock`, `.arep/heartbeat.last`, and `.arep/raw-logs/` for local runtime state. See `references/RUNTIME.md`.
+Issue 16 is the canonical human-readable runtime record: keep its body as a concise current runtime snapshot and use comments for material runtime/cadence transition history. The live/tracked runtime configuration remains authoritative when prose is stale or conflicts. After changing runtime configuration, PRIMARY should verify the actual state and reconcile the Issue 16 current snapshot.
+
+A Rep recommends `.arep/primary.lock`, `.arep/heartbeat.last`, and `.arep/raw-logs/` for local runtime state. See `references/RUNTIME.md`.
 
 ## Logging
 
@@ -191,7 +195,7 @@ Raw launcher stdout/stderr stays local under Git-ignored `.arep/raw-logs/`.
 
 Concise sanitized operational logs that are useful for humans or future cold starts may be tracked under `admin/logs/`, preferably as daily Markdown files. Log executed cycles, not scheduler polls that exit because the heartbeat is not due.
 
-Material cross-cutting actions, failures, recoveries, and configuration transitions belong in Issue 3. Keep Issue 1 concise and current.
+Runtime/cadence requests and transitions belong canonically in Issue 16. Use Issue 3 for material cross-cutting actions, failures, recoveries, incidents, or major state transitions that matter beyond the dedicated runtime record; do not duplicate routine cadence changes there merely for ceremony. Keep Issue 1 concise and current.
 
 Do not intentionally expose secrets in logs, repository state, or Issues.
 
