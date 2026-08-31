@@ -53,6 +53,8 @@ A_REP_SKILL_PATH="/opt/a-rep/a-rep/SKILL.md"
 EXECUTION_DRIVER="codex"
 EXECUTION_BIN="codex"
 EXECUTION_MODEL=""
+PROVENANCE_PLATFORM=""
+PROVENANCE_INSTANCE=""
 HEARTBEAT_ENABLED="true"
 HEARTBEAT_MODE="normal"
 HEARTBEAT_FAST_MINUTES="5"
@@ -112,12 +114,16 @@ Canonical top-level zones are `admin/`, `config/`, `scratch/`, `procedures/`, an
 
 - `admin/` durable operational documentation and sanitized Git-visible logs.
 - `config/` non-secret runtime configuration plus hot/deep strategic context.
-- `scratch/` exploratory and untrusted working material.
-- `procedures/` reviewed and trusted ways of working.
+- `scratch/` exploratory and untrusted working material, including experimental `scratch/skills/` capability packages.
+- `procedures/` reviewed and trusted ways of working, including approved `procedures/skills/` capability packages.
 - `work/` actual artifacts produced while pursuing goals.
 - `.arep/` local machine runtime state and raw logs; Git ignored.
 
-PRIMARY always reads `config/agent-context.md`. It reads `config/agent-context-deep.md` when deeper background is materially useful.
+PRIMARY always reads `config/agent-context.md`. It reads `config/agent-context-deep.md` only when the current task/recovery need materially benefits from deeper background.
+
+Material agent-authored GitHub comments, reviews, and handoffs should use A Rep producer provenance: `[Agent | Platform | Role | Instance]`. Launcher-run PRIMARY cycles receive an `Agent-Run` ID. Provenance identifies the producer; it does not create authority. See the public A Rep `references/PROVENANCE.md`.
+
+Reusable experimental capabilities may be created and evolved under `scratch/skills/<skill-name>/SKILL.md`. Promotion into `procedures/skills/` requires review and explicit human approval. Skills describe capability, not permission. See `references/SKILLS.md` in the public A Rep repo.
 
 Durable operating state is also maintained through GitHub Issues. Normal real work starts at Issue 21.
 EOFREADME
@@ -145,10 +151,10 @@ create_issue "[A Rep] Reserved 10" "Reserved for a future stable framework-level
 create_issue "[A Rep] Inbox" "Targeted inbound communication intended for this PRIMARY, including optional Guardian Angel review or offers of bounded help. Triage when useful."
 create_issue "[A Rep] Outbox" "Optional bulletin board for information other agents may inspect without mandatory acknowledgement."
 create_issue "[A Rep] Research" "Backlog of worthwhile questions and investigations for free cycles or rejuvenation."
-create_issue "[A Rep] Operational Improvements" "Candidates for improving the agent's nondeterministic methods, organization, recovery, and procedures."
-create_issue "[A Rep] Coding Improvements" "Candidates for scripts, automation, tools, and deterministic helpers that may replace repeated work."
+create_issue "[A Rep] Operational Improvements" "Candidates for improving the agent's nondeterministic methods, organization, recovery, procedures, and reusable capabilities."
+create_issue "[A Rep] Coding Improvements" "Candidates for scripts, automation, tools, deterministic helpers, and reusable coding capabilities that may replace repeated work."
 create_issue "[A Rep] Runtime and Heartbeat Requests" "Requests and rationale for runtime or cadence changes. The configured runtime remains authoritative."
-create_issue "[A Rep] Rejuvenation" "Rejuvenation focus, findings, proposals, and material self-improvement outcomes."
+create_issue "[A Rep] Rejuvenation" "Rejuvenation focus, findings, proposals, experimental-skill learnings, and material self-improvement outcomes."
 create_issue "[A Rep] Reserved 18" "Reserved for a future stable framework-level need."
 create_issue "[A Rep] Reserved 19" "Reserved for a future stable framework-level need."
 create_issue "[A Rep] Reserved 20" "Reserved for a future stable framework-level need."
