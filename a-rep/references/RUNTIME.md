@@ -1,4 +1,4 @@
-# A Rep V1.2 minimal runtime
+# A Rep V1.2.1 minimal runtime
 
 The runtime is intentionally small. It wakes a capable coding agent and gives it enough durable coordinates to recover. The agent, not the shell script, decides the work.
 
@@ -33,19 +33,47 @@ Supported modes are `fast`, `normal`, `slow`, and `paused`.
 
 `DEADLINE_MODE=true` uses the fast interval unless heartbeat mode is explicitly paused. It also suppresses rejuvenation.
 
-Important V1.2 clarification: the shell launcher does not inspect GitHub Issue due dates and does not infer that a deadline is approaching. `DEADLINE_MODE` is explicit configured state. PRIMARY may change it when current evidence warrants and should record material rationale in Issue 16.
+The cadence clock is anchored to **successful heartbeat completion**, not heartbeat start. `arep-run.sh` writes `.arep/heartbeat.last` only after the execution driver exits successfully. The next heartbeat can start on the first scheduler poll at or after:
+
+`previous successful completion + selected heartbeat interval`
+
+Consequences:
+
+- `fast=5` does not guarantee exactly five minutes between cycle start timestamps;
+- start-to-start spacing includes the previous cycle's execution time;
+- scheduler polling can add up to roughly one polling interval after the due time;
+- a failed execution does not advance `.arep/heartbeat.last`.
+
+When forecasting a next wake in a handoff, describe a due window relative to successful completion and scheduler granularity rather than promising an exact start timestamp before the current cycle has finished.
+
+The shell launcher does not inspect GitHub Issue due dates and does not infer that a deadline is approaching. `DEADLINE_MODE` is explicit configured state. PRIMARY may change it when current evidence warrants.
 
 Temporary workers and Guardian may request cadence changes through Issue 16 but do not own runtime configuration.
 
 The cron polling interval must be no slower than the configured fast interval if that fast cadence is expected to be achievable.
 
+## Runtime record: Issue 16
+
+Issue 16 is the canonical human-readable runtime/heartbeat record for an agent repository.
+
+Prefer:
+
+- **Issue 16 body:** concise current runtime snapshot, including current mode, deadline state, important intervals, scheduler state, and other host/runtime facts worth seeing at a glance.
+- **Issue 16 comments:** material runtime/cadence requests, transitions, rationale, and verification history.
+
+The actual live/tracked runtime configuration and direct host evidence remain authoritative when Issue prose is stale or contradictory. After PRIMARY changes runtime configuration, it should verify the resulting state and reconcile the Issue 16 body so the current snapshot does not remain stale.
+
+Issue 3 is not a second routine runtime log. Mirror something there only when it is also a material cross-cutting action, failure, recovery, incident, or major state transition worth preserving beyond Issue 16.
+
 ## Strategic context loading
 
 Every heartbeat reads `config/agent-context.md` before selecting work.
 
-`config/agent-context-deep.md` is intentionally on-demand. The model should load it when the hot context points to it, active work is unclear, or richer background materially improves execution.
+`config/agent-context-deep.md` is intentionally on-demand and should not be part of automatic baseline recovery. First recover hot context and current work/system state. Load deep context only when the resulting task or recovery need requires background absent from hot context, or when the hot context specifically points to deep material that materially affects the selected action.
 
-The same hot/deep rule applies to Guardian review and, where useful, rejuvenation.
+Having no active work is not, by itself, a reason to load deep context. A no-work heartbeat should normally remain hot-context-only unless diagnosing an ambiguity, incident, or strategic question that genuinely requires deeper background.
+
+The same principle applies to Guardian review and, where useful, rejuvenation: deeper context should earn its token/context cost by materially improving the current review or improvement task.
 
 ## Execution engines
 
@@ -78,7 +106,7 @@ Raw logs may contain large command output, model text, or sensitive context and 
 
 Git-visible operational history belongs under the tracked private-agent path `admin/logs/`. These entries must be concise and sanitized. Prefer a daily Markdown file and record only executed PRIMARY cycles, not scheduler polls that exit because a heartbeat is not due.
 
-Issue 3 remains the cross-cutting durable trail for material actions, failures, recoveries, and major configuration transitions rather than routine cycle detail.
+Issue 16 is canonical for routine runtime/cadence transitions. Issue 3 remains the cross-cutting durable trail for material actions, failures, recoveries, incidents, and major state transitions that matter beyond a dedicated work/runtime record.
 
 Never intentionally print or persist secrets in either log tier.
 
@@ -111,8 +139,10 @@ Run `sh a-rep/tests/runtime-test.sh`.
 
 The suite uses a fake execution binary, not a live paid model call. It covers cadence modes, explicit deadline behaviour, missing configuration, execution failure, success timestamp behaviour, due-skip, PRIMARY lock contention, and rejuvenation suppression.
 
+V1.2.1 changes documentation and agent-state conventions only; launcher cadence behavior is intentionally unchanged from V1.2.
+
 ## Deferred runtime optimizations
 
-V1.2 does not add provider-session/thread resumption as a continuity dependency. It may be explored later as a token/latency optimization, but durable cold-start recovery remains authoritative.
+V1.2.1 does not add provider-session/thread resumption as a continuity dependency. It may be explored later as a token/latency optimization, but durable cold-start recovery remains authoritative.
 
-V1.2 also does not add a process timeout merely because cron polls frequently. The lease already prevents overlap. Add bounded timeout or stuck-cycle detection only when real operating evidence shows hanging or unexpectedly long executions.
+It also does not add a process timeout merely because cron polls frequently. The lease already prevents overlap. Add bounded timeout or stuck-cycle detection only when real operating evidence shows hanging or unexpectedly long executions.
