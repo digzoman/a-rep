@@ -28,6 +28,24 @@ This remains deliberately small: no database, queue, webhook service, activity s
 
 See `a-rep/references/EVENT_WAKE.md` and `a-rep/references/RUNTIME.md`.
 
+## V1.4.1: provenance-preserving human notifications
+
+V1.4.1 makes asynchronous human notification a first-class A Rep concern without introducing a notification service.
+
+Material phone pushes, Discord messages, emails, or similar alerts SHOULD reuse the same provenance header already used in GitHub:
+
+`[Agent | Platform | Role | Instance]`
+
+For transports with a title/subject, that visible title SHOULD be an exact provenance header.
+
+If one A Rep surface originates the message and another surface relays it, preserve the origin header as the title and add a `Relayed-By: [Agent | Platform | Role | Instance]` line for the delivery surface.
+
+A notification gets human attention; it does not itself create approval or authority.
+
+A Rep does not mandate Pocket Alert, Discord, SMS, email, or any other vendor. Approved agent skills may implement transports while following the common provenance/authority contract.
+
+See `a-rep/references/HUMAN_NOTIFICATIONS.md` and `a-rep/references/PROVENANCE.md`.
+
 ## Portability
 
 The persistent agent is not the current model session. Codex and OpenCode are directly supported by the minimal PRIMARY launcher, and other capable execution surfaces can be added without changing durable identity.
@@ -39,7 +57,7 @@ Cold-start recovery is the correctness baseline. Provider-session resumption may
 The portable skill is under `a-rep/`.
 
 - `a-rep/SKILL.md` — current operating rules.
-- `a-rep/references/` — protocol, Issue, repository, runtime, event-wake, Guardian, provenance, skill, and influence references.
+- `a-rep/references/` — protocol, Issue, repository, runtime, event-wake, Guardian, provenance, human-notification, skill, and influence references.
 - `a-rep/prompts/` — cold-start heartbeat, event, rejuvenation, and optional Guardian prompts.
 - `a-rep/runtime/arep-run.sh` — PRIMARY launcher.
 - `a-rep/runtime/arep-watch-github.sh` — cheap deterministic GitHub watcher.
@@ -73,7 +91,9 @@ Agent-authored Git commits SHOULD use an `Agent-Provenance:` trailer. Launcher-r
 
 Provenance identifies the producer. It does **not** create authority, prove correctness, or make a Worker/Guardian into PRIMARY.
 
-V1.4 also uses provenance as a conservative routing hint to suppress clearly self-produced PRIMARY comments from causing event-wake feedback loops. Ambiguous origin is still treated as wake-worthy rather than silently discarded.
+V1.4 uses provenance as a conservative routing hint to suppress clearly self-produced PRIMARY comments from causing event-wake feedback loops. Ambiguous origin is still treated as wake-worthy rather than silently discarded.
+
+V1.4.1 applies the same header to human-facing notifications so transport identity does not erase producer/origin identity.
 
 See `a-rep/references/PROVENANCE.md`.
 
@@ -120,8 +140,10 @@ Issue 16 is the canonical human-readable runtime record: body for current snapsh
 
 ## Current status
 
-**A Rep V1.4.0** is the current V1 release.
+**A Rep V1.4.1** is the current V1 release.
 
-It adds the minimal GitHub event-wake path and moves the active-agent normal backup heartbeat baseline to 30 minutes, while retaining explicit fast/deadline controls for near-term scheduled work.
+V1.4 adds the minimal GitHub event-wake path and moves the active-agent normal backup heartbeat baseline to 30 minutes, while retaining explicit fast/deadline controls for near-term scheduled work.
+
+V1.4.1 adds the first-class human-notification provenance contract while deliberately leaving delivery adapters to approved agent skills rather than adding framework infrastructure.
 
 See `CURRENT.md` and `CHANGELOG.md`.
