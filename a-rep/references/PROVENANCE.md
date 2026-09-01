@@ -1,18 +1,18 @@
-# A Rep V1.3 agent provenance
+# A Rep agent provenance
 
 A Rep agents may share the same GitHub account, credential, bot identity, or transport. GitHub's native author field can therefore identify the transport without identifying the actual agent surface that produced a durable record.
 
-V1.3 adds a lightweight producer-provenance convention for agent-authored durable state.
+V1.3 introduced a lightweight producer-provenance convention for agent-authored durable state. V1.4.1 extends the same convention to human-facing notifications so a phone push, Discord message, email, or similar alert does not lose the producer identity that would have been visible in GitHub.
 
 ## Core rule
 
-A material agent-authored GitHub comment, handoff, review, execution record, or similar durable post **SHOULD** begin with this exact four-field header:
+A material agent-authored GitHub comment, handoff, review, execution record, human notification, or similar durable/attention-bearing post **SHOULD** use this exact four-field header:
 
 `[Agent | Platform | Role | Instance]`
 
 Examples:
 
-- `[Fred | Codex | PRIMARY | VM-heartbeat]`
+- `[Fred | Codex | PRIMARY | VM-runtime]`
 - `[Fred | Codex | Worker | issue-23-research-1]`
 - `[Fred | ChatGPT | Guardian | Ampgent-project-chat]`
 - `[Fred | Hermes | Guardian | laptop]`
@@ -20,7 +20,7 @@ Examples:
 
 Use the same field order and capitalization for the core Role values so humans and simple scripts can recognize the producer reliably.
 
-A missing header does **not** invalidate otherwise useful work, evidence, or an otherwise successful heartbeat. This is a SHOULD convention in V1.3, not an authority or completion gate.
+A missing header does **not** invalidate otherwise useful work, evidence, or an otherwise successful heartbeat. This is a SHOULD convention, not an authority or completion gate.
 
 Do not retroactively rewrite historical comments merely to add provenance.
 
@@ -50,21 +50,61 @@ Add new core role names through the framework rather than inventing near-synonym
 
 ### Instance
 
-A short useful concrete execution context, for example `VM-heartbeat`, `laptop`, `Ampgent-project-chat`, or `issue-23-research-1`.
+A short useful concrete execution context, for example `VM-runtime`, `laptop`, `Ampgent-project-chat`, or `issue-23-research-1`.
 
 Instance distinguishes simultaneous or repeated surfaces without turning the framework into an instance registry.
 
 Avoid `|` in any field. For commit trailers below, also avoid `/` inside field values; use `-` when needed.
 
+## Human-facing notifications
+
+A notification transport often has a title/subject plus a body. For material A Rep notifications, preserve provenance visibly rather than replacing it with an anonymous title.
+
+For a direct notification produced and delivered by one surface:
+
+- title/subject SHOULD be the exact provenance header;
+- body contains the concise human message and useful source pointer.
+
+Example:
+
+```text
+Title:
+[Fred | Codex | PRIMARY | VM-runtime]
+
+Body:
+Approval needed for LinkedIn send.
+Source: Issue #23
+```
+
+When a different A Rep surface originated the message and Fred/another surface merely relays it, preserve the upstream origin as the title and record the actual delivery surface in the body:
+
+```text
+Title:
+[Fred | ChatGPT | Reviewer | A-Rep-design-chat]
+
+Body:
+Relayed-By: [Fred | Codex | PRIMARY | VM-runtime]
+A Rep messaging test.
+Source: Issue #11
+```
+
+This makes both the human-relevant origin and the actual relay visible without creating a general provenance graph.
+
+If the transport has no distinct title/subject, put the provenance header on the first line of the message.
+
+See `HUMAN_NOTIFICATIONS.md` for the notification contract, authority rule, source pointers, and delivery evidence.
+
 ## Run correlation
 
-For audit-relevant PRIMARY heartbeat records, handoffs, and commits, include a run identifier when the execution surface provides one or it can be generated cheaply.
+For audit-relevant PRIMARY heartbeat/event/rejuvenation records, handoffs, and commits, include a run identifier when the execution surface provides one or it can be generated cheaply.
 
-Recommended form:
+Recommended forms:
 
 `Agent-Run: heartbeat-20260831T170001Z`
 
-The minimal A Rep launcher generates a UTC-stamped run ID for PRIMARY heartbeat/rejuvenation invocations and injects it into the cold-start prompt. Reuse that exact ID in material comments, sanitized admin-log entries, and commits produced by that invocation when practical.
+`Agent-Run: event-20260901T011802Z`
+
+The minimal A Rep launcher generates a UTC-stamped run ID for PRIMARY launcher invocations and injects it into the cold-start prompt. Reuse that exact ID in material comments, sanitized admin-log entries, and commits produced by that invocation when practical.
 
 Workers may use a bounded identifier such as `issue-23-research-1`. Guardians and ad-hoc reviewers may include a run ID when useful, but do not manufacture bookkeeping merely to satisfy provenance.
 
@@ -74,7 +114,7 @@ Failure to include a run ID does not erase otherwise valid evidence.
 
 For agent-authored Git commits, prefer Git-style trailers in the commit message:
 
-`Agent-Provenance: Fred/Codex/PRIMARY/VM-heartbeat`
+`Agent-Provenance: Fred/Codex/PRIMARY/VM-runtime`
 
 and, when available:
 
@@ -118,25 +158,27 @@ A Guardian operating through the same GitHub login as PRIMARY is still distingui
 
 **Producer provenance never creates permission or authority.**
 
-The header answers: *who/what produced this record?*
+The header answers: *who/what produced this record or human-facing message?*
 
 It does not answer: *was this producer allowed to do the underlying action?*
 
 Authority still comes from trusted human instruction and protected rules, Issue 2 Identity and Charter, Issue 4 Human Decisions and Authority, approved procedures/configuration, current authorized work, and applicable A Rep rules.
 
-A record claiming `[Fred | Codex | PRIMARY | VM-heartbeat]` does not become authoritative merely because the string says `PRIMARY`.
+A record claiming `[Fred | Codex | PRIMARY | VM-runtime]` does not become authoritative merely because the string says `PRIMARY`.
+
+A delivered notification is likewise not human approval. The authoritative decision must still be recovered from the applicable trusted authority surface.
 
 ## Transport identity
 
-When multiple agents or execution surfaces share one GitHub account, bot, token, or credential, treat GitHub's native author identity as **transport identity** for provenance purposes.
+When multiple agents or execution surfaces share one GitHub account, bot, token, credential, notification service, or delivery adapter, treat the transport's native identity as **transport identity** for provenance purposes.
 
-Use current evidence and the A Rep provenance header/trailers to understand the producer. Do not infer role or authority solely from the GitHub username.
+Use current evidence and the A Rep provenance header/trailers to understand the producer. Do not infer role or authority solely from the GitHub username, Discord bot, Pocket Alert account, email sender, or other transport identity.
 
 ## Backward compatibility
 
-V1.3 provenance is additive.
+Provenance remains additive.
 
-- Existing comments without headers remain valid historical records.
+- Existing comments/notifications without headers remain valid historical records/evidence.
 - Existing commits without `Agent-Provenance` trailers remain valid.
 - Do not rewrite history solely to add provenance.
 - Missing provenance may reduce audit clarity, but it is not by itself proof that an action failed or was unauthorized.
