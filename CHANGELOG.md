@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.1
+
+Human-notification provenance patch based on live Fred V1.4 event-wake and Pocket Alert testing.
+
+- Added `references/HUMAN_NOTIFICATIONS.md` as the first-class A Rep contract for asynchronous human alerts.
+- Reused the existing `[Agent | Platform | Role | Instance]` provenance format instead of inventing a notification-specific identity scheme.
+- For transports with a visible title/subject, the title SHOULD be an exact provenance header.
+- When one A Rep surface originates a message and another relays it, preserve the origin header as the notification title and add `Relayed-By: [Agent | Platform | Role | Instance]` for the actual delivery surface.
+- Added concise `Source:` guidance for durable Issue/URL attribution and optional `Path:` guidance for diagnostic/test messages.
+- Clarified that notification delivery is attention, not approval or authority.
+- Clarified machine-side delivery evidence versus proof the human actually received/read the alert.
+- Updated `SKILL.md`, `PROVENANCE.md`, README, and CURRENT to make notification provenance part of the portable framework.
+- Added no notification daemon, message bus, database, vendor dependency, new role, or runtime scheduler. Delivery adapters remain approved agent skills.
+
 ## 1.4.0
 
 Event-wake and backup-heartbeat release based on live Fred operating-cost/responsiveness discussion.
