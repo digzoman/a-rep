@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.5.0
+
+Optional durable-work skills release. Runtime architecture is unchanged from V1.4.x.
+
+### plan-work
+
+- Added approved generic `plan-work` to the canonical private-agent scaffold.
+- Uses `work/plans/<plan-id>/PLAN.md` for current human-readable plan state and `EVENTS.md` for concise chronological transitions.
+- Keeps optional `work/plans/INDEX.md` generated/rebuildable rather than authoritative.
+- Uses a small state vocabulary (`READY`, `RUNNING`, waits, `BLOCKED`, `COMPLETE`, `CANCELLED`) as recovery vocabulary, not an enforced workflow graph.
+- Keeps substantial plans subordinate to existing Issue 21+ work rather than creating another work radar.
+- Added tiny `planctl.py` operations only for `reindex`, `status`, and due/overdue reporting.
+- Reuses existing event/heartbeat/fast/deadline behavior and does not add a scheduler or direct PRIMARY launcher path.
+
+### data-ledger
+
+- Added approved generic `data-ledger` to the canonical private-agent scaffold.
+- Uses `work/data/<ledger-id>/README.md` for source/authority/identity metadata, `snapshot.csv` for the current structured working set, and `events.csv` for append-oriented logical events.
+- Keeps optional `work/data/INDEX.md` generated/rebuildable rather than authoritative.
+- Explicitly distinguishes provider truth, business truth, and agent working/audit state so a local ledger does not silently become a competing CRM.
+- Added tiny `ledgerctl.py` operations only for `reindex`, stable-identity `find`, and idempotent `append-event`.
+- Uses a small generic event envelope while leaving snapshot schemas and event types ledger-specific.
+
+### Simplicity and compatibility
+
+- Kept live artifacts under the existing `work/` zone instead of adding new top-level repository taxonomy.
+- Preferred Markdown for plans, state, metadata, registries, and human-readable history; CSV for structured tables/events.
+- Added no JSON, database, SQLite, schema engine, CRM, queue, workflow engine, daemon, scheduler, heartbeat hook, watcher change, skill registry, or second PRIMARY.
+- Added `optional-skills-test.sh` covering rebuildable indexes, due/overdue plan reporting, fresh-process recovery, replanning history, CSV snapshots, identity lookup, idempotent events, and external-authority labelling.
+- Existing A Rep runtime/watcher files are unchanged; agents that never use either skill operate exactly as before.
+
 ## 1.4.1
 
 Human-notification provenance patch based on live Fred V1.4 event-wake and Pocket Alert testing.

@@ -12,39 +12,59 @@ A PRIMARY repeatedly reconstructs reality, reads concise strategic context, sele
 
 A Rep begins with judgment rather than a predetermined workflow. Stable recurring behaviour may later be formalized into reviewed procedures, scripts, skills, or graph-based workflows.
 
+## V1.5: optional durable work skills
+
+V1.5 adds two approved generic skills to the canonical private-agent scaffold without changing the runtime architecture:
+
+- `plan-work` — optional Markdown planning/recovery for already-authorized work spanning multiple meaningful chunks or PRIMARY runs;
+- `data-ledger` — optional Markdown + CSV working/audit state for evolving structured records.
+
+They are deliberately boring. They do not add a workflow engine, CRM, database, scheduler, queue, second PRIMARY, or new authority model.
+
+When used, live artifacts stay inside the existing `work/` zone:
+
+```text
+work/plans/<plan-id>/PLAN.md
+work/plans/<plan-id>/EVENTS.md
+work/data/<ledger-id>/README.md
+work/data/<ledger-id>/snapshot.csv
+work/data/<ledger-id>/events.csv
+```
+
+Optional `INDEX.md` files are generated convenience views and are never authoritative.
+
+The tiny helpers are shipped with the approved skills:
+
+```text
+procedures/skills/plan-work/planctl.py
+procedures/skills/data-ledger/ledgerctl.py
+```
+
+`planctl.py` only reindexes, reports status, and identifies due/overdue plans. `ledgerctl.py` only reindexes, finds by stable identity, and appends idempotent events. PRIMARY still provides the judgment.
+
+See the skill packages in `a-rep/scaffold/agent-repo/procedures/skills/`.
+
 ## V1.4: event wake + backup heartbeat
 
-V1.4 separates **responsiveness** from **recovery** without adding an orchestration service.
+V1.4 separates responsiveness from recovery without adding an orchestration service.
 
 A tiny GitHub watcher may poll the private agent repository every minute. If nothing meaningful changed, it exits without launching the model. If it sees a new Issue, reopened Issue, or non-self Issue comment, it requests an immediate `event` PRIMARY wake through the same local PRIMARY lease used by heartbeat/rejuvenation.
 
-Separately, the normal heartbeat remains a recovery/liveness fallback. The recommended/default normal backup interval for an active agent is now **30 minutes**; the heartbeat cron may still poll every five minutes so explicit fast/deadline mode can take effect quickly.
+Separately, the normal heartbeat remains a recovery/liveness fallback. The recommended/default normal backup interval for an active agent is 30 minutes; the heartbeat cron may still poll every five minutes so explicit fast/deadline mode can take effect quickly.
 
-A successful event wake postpones the next backup heartbeat, avoiding an immediate redundant model invocation.
-
-If PRIMARY knows authorized scheduled work needs another wake sooner than the normal 30-minute backup, it should explicitly enter fast mode or `DEADLINE_MODE=true` early enough to meet the window, then restore normal state when appropriate. V1.4 does not parse Issue prose or automatically infer deadlines.
-
-This remains deliberately small: no database, queue, webhook service, activity score, day/night scheduler, or second PRIMARY.
-
-See `a-rep/references/EVENT_WAKE.md` and `a-rep/references/RUNTIME.md`.
+If PRIMARY knows authorized scheduled work needs another wake sooner than the normal backup, it should explicitly use existing fast/deadline behavior or an already-authorized external scheduler when exact timing genuinely requires it. A Rep does not infer business deadlines from prose.
 
 ## V1.4.1: provenance-preserving human notifications
-
-V1.4.1 makes asynchronous human notification a first-class A Rep concern without introducing a notification service.
 
 Material phone pushes, Discord messages, emails, or similar alerts SHOULD reuse the same provenance header already used in GitHub:
 
 `[Agent | Platform | Role | Instance]`
 
-For transports with a title/subject, that visible title SHOULD be an exact provenance header.
-
-If one A Rep surface originates the message and another surface relays it, preserve the origin header as the title and add a `Relayed-By: [Agent | Platform | Role | Instance]` line for the delivery surface.
+For transports with a title/subject, that visible title SHOULD be an exact provenance header. If one A Rep surface originates the message and another surface relays/delivers it, preserve the origin header as the title and add `Relayed-By: [Agent | Platform | Role | Instance]` for the delivering surface.
 
 A notification gets human attention; it does not itself create approval or authority.
 
-A Rep does not mandate Pocket Alert, Discord, SMS, email, or any other vendor. Approved agent skills may implement transports while following the common provenance/authority contract.
-
-See `a-rep/references/HUMAN_NOTIFICATIONS.md` and `a-rep/references/PROVENANCE.md`.
+A Rep does not mandate a notification vendor. Approved agent skills may implement transports while following the common provenance/authority contract.
 
 ## Portability
 
@@ -64,8 +84,8 @@ The portable skill is under `a-rep/`.
 - `a-rep/runtime/arep.conf.example` — runtime configuration example.
 - `a-rep/runtime/cron.example` — watcher/heartbeat/rejuvenation schedule example.
 - `a-rep/scripts/bootstrap-agent.sh` — bootstrap for a new private PRIMARY-agent repository.
-- `a-rep/scaffold/agent-repo/` — canonical private-agent filesystem scaffold.
-- `a-rep/tests/` — lightweight runtime/watcher regression tests.
+- `a-rep/scaffold/agent-repo/` — canonical private-agent filesystem scaffold, including framework-shipped approved optional skills.
+- `a-rep/tests/` — lightweight runtime/watcher/optional-skill regression tests.
 
 A bootstrapped agent repository reserves Issues 1 through 20 for A Rep system use. Real work starts at Issue 21.
 
@@ -81,21 +101,13 @@ Context helps interpretation; Issue 2, Issue 4, trusted current human instructio
 
 ## Producer provenance
 
-V1.3 introduced lightweight producer provenance for environments where multiple agent surfaces share the same GitHub account or bot identity.
-
 Material agent-authored GitHub comments, reviews, and handoffs SHOULD begin with:
 
 `[Agent | Platform | Role | Instance]`
 
 Agent-authored Git commits SHOULD use an `Agent-Provenance:` trailer. Launcher-run PRIMARY cycles receive a UTC-stamped `Agent-Run` ID.
 
-Provenance identifies the producer. It does **not** create authority, prove correctness, or make a Worker/Guardian into PRIMARY.
-
-V1.4 uses provenance as a conservative routing hint to suppress clearly self-produced PRIMARY comments from causing event-wake feedback loops. Ambiguous origin is still treated as wake-worthy rather than silently discarded.
-
-V1.4.1 applies the same header to human-facing notifications so transport identity does not erase producer/origin identity.
-
-See `a-rep/references/PROVENANCE.md`.
+Provenance identifies the producer. It does not create authority, prove correctness, or make a Worker/Guardian into PRIMARY.
 
 ## First-class skills
 
@@ -107,9 +119,9 @@ Approved capabilities:
 
 `procedures/skills/<skill-name>/SKILL.md`
 
-PRIMARY may create, test, and evolve experimental skills autonomously within current work authority. Promotion into `procedures/skills/` requires review and explicit human approval.
+PRIMARY may create, test, and evolve experimental skills autonomously within current work authority. Promotion into `procedures/skills/` requires review and explicit human approval. Accepted framework releases may also ship approved generic skills in the canonical scaffold.
 
-A skill describes **capability/how**, not **permission**. No skill registry, database, package manager, marketplace, or dedicated skill API is required.
+A skill describes capability/how, not permission. No skill registry, database, package manager, marketplace, or dedicated skill API is required.
 
 See `a-rep/references/SKILLS.md`.
 
@@ -121,7 +133,7 @@ A Guardian can be scheduled independently through ChatGPT, Hermes, Claude, or an
 
 Guardian is advisory, not another PRIMARY. Its default write surface is GitHub Issue comments and it stays silent when there is nothing material to add.
 
-With V1.4, a material Guardian Issue comment can wake PRIMARY through the GitHub watcher without giving Guardian any additional authority.
+A material Guardian Issue comment can wake PRIMARY through the GitHub watcher without giving Guardian any additional authority.
 
 ## Runtime and observability
 
@@ -140,10 +152,8 @@ Issue 16 is the canonical human-readable runtime record: body for current snapsh
 
 ## Current status
 
-**A Rep V1.4.1** is the current V1 release.
+**A Rep V1.5.0** is the current V1 release.
 
-V1.4 adds the minimal GitHub event-wake path and moves the active-agent normal backup heartbeat baseline to 30 minutes, while retaining explicit fast/deadline controls for near-term scheduled work.
-
-V1.4.1 adds the first-class human-notification provenance contract while deliberately leaving delivery adapters to approved agent skills rather than adding framework infrastructure.
+V1.5 adds optional `plan-work` and `data-ledger` approved framework skills using Markdown/CSV and tiny standard-library helpers. Runtime behavior remains V1.4.x.
 
 See `CURRENT.md` and `CHANGELOG.md`.
