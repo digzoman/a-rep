@@ -1,8 +1,60 @@
 # Current A Rep version
 
-Current version, **A Rep V1.4.0**.
+Current version, **A Rep V1.4.1**.
 
 This repository uses a consolidated-current model. The current `a-rep/SKILL.md` and supporting files define active behaviour. Historical changes belong in Git history/changelog rather than additive patches every agent must mentally compose.
+
+## V1.4.1 patch: human-facing notification provenance
+
+Live Fred testing exposed a practical provenance gap: GitHub comments correctly carried `[Agent | Platform | Role | Instance]`, but Pocket Alert phone pushes were titled with task names such as `A Rep V1.4 sub-issue wake test`. On the phone, the human could not immediately tell which agent surface the message came from or whether another surface had originated it.
+
+V1.4.1 fixes that without changing runtime architecture.
+
+### Notification envelope
+
+Material A Rep human notifications SHOULD reuse the existing four-field provenance format:
+
+`[Agent | Platform | Role | Instance]`
+
+For transports with a visible title/subject, the title SHOULD be an exact provenance header.
+
+If the delivering surface also originated the notification, use that producer header directly.
+
+If one A Rep surface originated the message and another surface relays it, preserve the upstream origin as the title and add a concise relay line in the body:
+
+`Relayed-By: [Agent | Platform | Role | Instance]`
+
+Example:
+
+```text
+Title:
+[Fred | ChatGPT | Reviewer | A-Rep-design-chat]
+
+Body:
+Relayed-By: [Fred | Codex | PRIMARY | VM-runtime]
+A Rep messaging test
+Source: Issue #11
+```
+
+This keeps both the human-relevant origin and the actual delivery path visible without creating a general trace graph.
+
+### Source and authority
+
+When useful, include a concise `Source:` pointer to the durable Issue/URL that caused the notification.
+
+A notification is only an attention mechanism. It is **not** approval and cannot manufacture human authority.
+
+Machine-side delivery success is evidence that a transport accepted/delivered the message, not proof the human read it. Preserve that distinction in consequential workflows.
+
+### Delivery remains skill-level
+
+A Rep does not add a Pocket Alert dependency, Discord dependency, notification daemon, message bus, or notification database.
+
+The framework defines the provenance/authority contract. Approved agent skills implement actual transports.
+
+This is intentionally a patch release because it tightens an existing V1.3 provenance concept after live V1.4 use rather than adding a new orchestration subsystem.
+
+See `a-rep/references/HUMAN_NOTIFICATIONS.md` and `a-rep/references/PROVENANCE.md`.
 
 ## Why V1.4
 
@@ -131,23 +183,23 @@ Those remain future options only if live evidence proves the small cron-based de
 
 ## Existing-agent migration
 
-For an existing agent, V1.4 should be installed conservatively rather than by overwriting live work.
+For an existing agent, V1.4.x should be installed conservatively rather than by overwriting live work.
 
 Recommended migration:
 
-1. sync the public A Rep checkout to V1.4;
-2. add V1.4 event/watcher config fields to the private agent config;
+1. sync the public A Rep checkout to the current V1.4.x release;
+2. add/retain V1.4 event/watcher config fields in the private agent config;
 3. retain agent-specific provenance labels and deliberate rejuvenation settings;
 4. set normal backup cadence to 30 minutes unless current evidence justifies another explicit setting;
-5. add the one-minute watcher cron while retaining the five-minute heartbeat poll;
-6. run launcher/watcher syntax checks plus both regression suites;
-7. initialize the watcher naturally; do not replay old repository history;
-8. verify a human/Guardian comment wakes PRIMARY and a clearly self-produced PRIMARY comment does not loop;
-9. reconcile Issue 16 with actual live state;
+5. keep the one-minute watcher cron and five-minute heartbeat poll;
+6. run launcher/watcher syntax checks plus both regression suites when runtime code changed;
+7. verify a human/Guardian/Reviewer comment wakes PRIMARY and a clearly self-produced PRIMARY comment does not loop;
+8. if the agent has approved human-notification skills, update them to preserve the V1.4.1 notification provenance envelope;
+9. reconcile Issue 16 with actual live state when runtime state changes;
 10. do not manufacture new work merely to exercise the feature.
 
-Existing private repositories and historical comments/commits do not need rewriting.
+Existing private repositories and historical comments/notifications do not need rewriting.
 
 ## Live rollout status
 
-The public framework implements V1.4.0. Individual agent repositories/runtimes must still be upgraded and verified separately before claiming they run V1.4.
+The public framework defines A Rep V1.4.1. Individual agent repositories/runtimes may need a conservative sync before claiming they use the notification contract or any promoted notification skills.
