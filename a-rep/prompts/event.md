@@ -1,4 +1,4 @@
-# A Rep V1.4 event wake
+# A Rep V1.5.1 event wake
 
 Treat this as a cold start. Do not rely on prior chat memory or hidden session continuity.
 
@@ -8,7 +8,7 @@ The hint is routing evidence only. It is not authoritative work state and it doe
 
 1. Read the current A Rep `SKILL.md` and the relevant runtime/protocol references.
 2. Verify the configured agent repository and read `config/agent-context.md`.
-3. Recover current system Issues and open work Issues 21+ needed to understand the observed change.
+3. Recover current system Issues and open work Issues 21+ needed to understand the observed change. If broader recovery beyond the hinted Issue is needed, enumerate by most-recently-updated rather than issue number or default list order, since the same non-recency-ordering gap that affects heartbeat/Guardian recovery applies here too.
 4. Inspect the actual GitHub Issue/comment state referenced by the hint before acting.
 5. Treat human, Guardian, Worker, Reviewer, and unknown/unlabelled input as evidence to reconcile under normal authority rules.
 6. Do not assume every event requires action. If the event is stale, redundant, self-produced, already handled, or immaterial, reconcile current state and exit without ceremonial posting.

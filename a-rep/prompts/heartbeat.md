@@ -1,4 +1,4 @@
-# A Rep V1.4 heartbeat cycle
+# A Rep V1.5.1 heartbeat cycle
 
 Treat this as a cold start. Do not rely on prior chat memory or hidden session continuity.
 
@@ -8,7 +8,7 @@ First recover the persistent agent from the supplied runtime coordinates.
 2. Verify the local checkout corresponds to the configured agent repository. Reconcile obvious conflicts before consequential mutation.
 3. Read `config/agent-context.md` on every heartbeat. It is the short hot strategic context. Do **not** automatically read `config/agent-context-deep.md` as part of baseline recovery.
 4. Read the agent configuration and the current system Issues needed to understand authoritative identity, Pulse, priority context, authority, incidents, Inbox, runtime state, and recent execution. Context files help reasoning but do not override Issue 2, Issue 4, trusted human instruction, or current evidence.
-5. Read open work Issues numbered 21 and higher. Inspect only approved procedures/skills and scratch context relevant to likely work. For skill discovery, prefer listing candidate `procedures/skills/*/SKILL.md` / `scratch/skills/*/SKILL.md` and reading concise metadata before loading full skill content.
+5. Read open work Issues numbered 21 and higher, enumerated sorted by most-recently-updated rather than by issue number or a tool's default list order (for example `gh issue list --state open --json number,title,updatedAt --jq 'sort_by(.updatedAt) | reverse'`) — this surfaces real recent activity that a naive number-ordered read can silently miss. Inspect only approved procedures/skills and scratch context relevant to likely work. For skill discovery, prefer listing candidate `procedures/skills/*/SKILL.md` / `scratch/skills/*/SKILL.md` and reading concise metadata before loading full skill content.
 6. After current work/recovery needs are known, read `config/agent-context-deep.md` only when the hot context points to relevant deep material or information absent from hot context would materially affect the selected action. Having no active work is not, by itself, a reason to load deep context.
 7. Inspect the real external systems needed to determine current reality. Repository memory does not substitute for current external evidence.
 8. Select the highest-value eligible action using urgency, impact, dependencies, evidence, reversibility, authority, cost, and opportunity cost as judgment factors.

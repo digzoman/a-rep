@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1
+
+Small hardening release based on a live monitoring miss during Fred's Kimaki-relay testing: an external Claude monitoring loop enumerated open Issues using a tool's default (non-recency) sort order while separately printing `updatedAt`, so genuine hot activity on a low-numbered Issue (Inbox) was never surfaced across an entire test window.
+
+- Added explicit recency-sorted-enumeration guidance to `prompts/guardian.md` (step 4), `prompts/heartbeat.md` (step 5), and `prompts/event.md` (step 3): when enumerating open Issues, always sort by most-recently-updated rather than relying on issue number or a tool's default list order, since material activity can land on any Issue number including low-numbered system Issues.
+- Synced `references/GUARDIAN.md`, which had not been materially updated since V1.3 despite `prompts/guardian.md` gaining V1.4 event-wake awareness content: added the same recency-sort guidance and a new "Event wake awareness" section describing how a material Guardian comment can now trigger an event wake.
+- Runtime architecture, authority boundaries, and Guardian's advisory-only status are unchanged.
+
 ## 1.5.0
 
 Optional durable-work skills release. Runtime architecture is unchanged from V1.4.x.

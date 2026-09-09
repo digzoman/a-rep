@@ -2,11 +2,11 @@
 name: a-rep
 description: Lightweight repeating agent framework for persistent, nondeterministic, goal-seeking work across fresh coding-agent sessions. Use when an agent must recover durable state, prioritize real-world goals, act through available tools, verify results, record progress, and improve its own procedures over time.
 metadata:
-  version: "1.5.0"
+  version: "1.5.1"
   framework: "A Rep"
 ---
 
-# A Rep V1.5.0
+# A Rep V1.5.1
 
 ## Purpose
 

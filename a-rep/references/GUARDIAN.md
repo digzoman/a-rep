@@ -1,4 +1,4 @@
-# A Rep V1.3 Guardian Angel
+# A Rep V1.5.1 Guardian Angel
 
 Guardian Angel is an optional external review loop for a persistent A Rep PRIMARY.
 
@@ -32,6 +32,12 @@ Always read `config/agent-context.md`.
 Do not automatically read `config/agent-context-deep.md` during baseline review recovery. First recover the relevant system/work state and identify the review question. Load deep context only when the hot context points to relevant deep material or information absent from hot context would materially improve the current review. Having no active work is not, by itself, a reason to read the deep file.
 
 Then inspect relevant system Issues, work Issues 21+, `admin/logs/`, approved procedures/skills, relevant experimental skills, work artifacts, and direct external evidence as needed.
+
+When enumerating open Issues for this review, always sort by most-recently-updated rather than relying on issue number or a tool's default list order (for example `gh issue list --state open --json number,title,updatedAt --jq 'sort_by(.updatedAt) | reverse'`). Material recent activity can land on any Issue number, including low-numbered system Issues such as Inbox, and reviewing in issue-number order or trusting a default listing can silently hide it from an entire review cycle. This applies whether Guardian is reading Issues directly or through a bounded worker.
+
+## Event wake awareness
+
+Since V1.4, a material Guardian Issue comment (one that is not clearly self-produced, per `references/PROVENANCE.md`) can wake PRIMARY quickly through the one-minute GitHub watcher described in `references/EVENT_WAKE.md`, rather than waiting for the next backup heartbeat. This improves responsiveness but does not expand Guardian's authority or turn Guardian into a second PRIMARY. Because a material comment can trigger an immediate wake, Guardian should avoid posting low-value acknowledgement or ceremonial comments that would create an unnecessary event wake.
 
 ## Producer provenance
 
